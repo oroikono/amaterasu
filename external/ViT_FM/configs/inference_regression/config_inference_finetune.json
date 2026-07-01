@@ -1,0 +1,28 @@
+{
+    "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/mhd_orszag8_long/5steps_wall2all_32",
+    "tags": ["32"],
+    "error_file": "/cluster/home/braonic/ViT_FM/errors/errors_long_ar.csv",
+    
+    "which_data": "mhd_orszag8_long",
+    "err_group":      [1,2,1,2],
+    "err_mask_group": [1,1,1,1],
+    "regression_scheme": [1],
+    "is_masked": true,
+    "dt": 0.01, 
+    "max_num_time_steps": 1,
+    "time_step_size": 1, 
+    "allowed_transitions": [1],
+    "N_samples": 256,
+    "save_data": false,
+    "inference_tag": "ar",
+
+    "tag_data": "0",
+    "device": "cuda",
+    "ood_share": 0.0,
+    "batch_size": 8,
+    "is_ar":true,
+    "is_time": true,
+    "fix_input_to_time_step": null
+    
+    
+}

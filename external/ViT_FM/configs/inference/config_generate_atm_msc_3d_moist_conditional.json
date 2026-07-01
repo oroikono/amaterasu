@@ -1,0 +1,58 @@
+{
+  "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/eul_ns3d_mix1/TURBO_MASK_scratch_Base_10ep_8gpus_bs3_4acc_10000/finetuned/atm_msc_3d_moist/241VERTICAL_ATTEMPT3_FT_atm_msc_3d_moist_native_241",
+  "which_data": "conditional_atm_msc_3d_moist",
+  "which_type": "train",
+  "N_samples": 50,
+  "batch_size": 1,
+  "device": "cuda",
+  "inference_tag": "atm_msc_3d_moist_conditional",
+  "err_group": [
+      1,
+      1,
+      1,
+      1,
+      1
+  ],
+  "err_mask_group": [
+      1,
+      1,
+      1,
+      1,
+      1
+  ],
+  "is_time": true,
+  "is_masked": false,
+  "max_num_time_steps": 15,
+  "time_step_size": 1,
+  "fix_input_to_time_step": null,
+  "allowed_transitions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+  ],
+  "channel_names": [
+      "u",
+      "v",
+      "w",
+      "temperature",
+      "qt"
+  ],
+  "overwrite": false,
+  "save_data": false,
+  "tags": [],
+  "exclude": [],
+  "max_z": 192,
+  "macro_id": 1
+}

@@ -1,0 +1,29 @@
+{
+    "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/eul_ns3d_mix1/TURBO_MASK_scratch_Base_10ep_8gpus_bs3_4acc_10000",
+    "tags": [],
+    "exclude": [],
+    "error_file": "/cluster/home/braonic/ViT_FM/errors/errors_tmp.csv",
+    
+    "which_data": "ns_shear3d",
+    "err_group":      [1,3,1],
+    "err_mask_group": [0,1,0],
+    "regression_scheme": [4],
+    "is_masked": false,
+    "dt": 0.05, 
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1,2,3,4],
+    "max_num_time_steps": 4,
+    "time_step_size": 1, 
+    
+    "which_type": "train", 
+    "save_data": true,
+    "inference_tag": "generated_data",
+
+    "tag_data": "0",
+    "device": "cuda",
+    "N_samples": 1500,
+    "ood_share": 0.0,
+    "batch_size": 5,
+    "is_ar":true,
+    "is_time": true
+}

@@ -1,0 +1,40 @@
+{
+    "workdir": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/tg3d_n32t50_sparse",
+    "tag": "scratch_tg3d_n32t50_sparse_dt04",
+    "config_arch": "/cluster/home/braonic/ViT_FM/configs/architectures_regression/config_basic_vit3_base_p2.json",
+    "which_model": "basic_vit3",
+
+    "epochs": 100,
+    "warmup_epochs": 1,
+    "peak_lr": 0.0002,
+    "end_lr":  0.00002,
+    "batch_size": 6,
+    "accumulate_grad": 2,
+    "loss": 1,
+    "loss_type": "rel",
+    "device": "cuda",
+
+    "which_data": "tg3d_n32t50",
+    "N_train": 9500,
+
+    "in_dim": 5,
+    "out_dim": 5,
+    "is_masked": true,
+    "err_group":      [1, 3, 1],
+    "err_mask_group": [0, 1, 0],
+
+    "is_time": true,
+    "is_fourier_emb": true,
+
+    "_doc_time_step_size":
+        "TG3d N32T50 has phys_dt=0.04 and 51 snapshots; dt_pretrain / dt_n32t50 = 0.4 / 0.04 = 10. Setting time_step_size=10 means one transition unit = 0.4 phys time, matching the pretraining cadence on LowRes/HighRes TG3d (timesteps [0, 0.4, 0.8, 1.2, 1.6, 2.0]).",
+    "time_step_size": 10,
+    "max_num_time_steps": 5,
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1, 2, 3, 4, 5],
+
+    "s": 32,
+
+    "wandb_project_name": "foundation-model",
+    "wandb_run_name": "scratch_tg3d_n32t50_sparse_dt04"
+}

@@ -1,0 +1,36 @@
+{
+    "config_regression": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/eul_ns3d_mix1/TURBO_MASK_scratch_Base_10ep_8gpus_bs3_4acc_10000/finetuned/atm_msc_3d_dry/8k_3gpu_TMP2_FT_atm_msc_3d_dry_native_8000",
+
+    "epochs": 25,
+    "warmup_epochs": 0,
+    "peak_lr": 0.0004,
+    "end_lr": 0.00004,
+    "batch_size": 4,
+    "tag": "241fromDRY_tmp3_0kwarm",
+
+    "which_data": "atm_msc_3d_moist",
+    "N_train": 241,
+    "ft_encoder_decoder_warmup_steps": 0,
+
+    "is_post_trained": true,
+    "accumulate_grad": 1,
+    "is_precision_16": false,
+    "reinit_ft": false,
+    "init_new": false,
+
+    "in_dim": 11,
+    "out_dim": 5,
+    "err_group": [1, 1, 1, 1, 1],
+    "err_mask_group": [1, 1, 1, 1, 1],
+    "is_masked": false,
+
+    "max_num_time_steps": 15,
+    "time_step_size": 1,
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1, 2, 3, 4, 5, 6, 7, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    "is_time": true,
+
+    "loss_type": "rel",
+    "loss": 1,
+    "s": 64
+}

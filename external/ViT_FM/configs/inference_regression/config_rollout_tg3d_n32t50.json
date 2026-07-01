@@ -1,0 +1,13 @@
+{
+    "model_path": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/eul_ns3d_mix1/TURBO_MASK_scratch_Base_10ep_8gpus_bs3_4acc_10000/finetuned/tg3d_n32t50/ft_tg3d_n32t50_FT_tg3d_n32t50_native_9500",
+    "which_data": "tg3d_n32t50",
+    "strides": [1, 2, 4, 8],
+    "N_samples": 128,
+    "batch_size": 8,
+    "device": "cuda",
+    "err_group":      [1, 3, 1],
+    "err_mask_group": [0, 1, 0],
+    "spectrum_fractions": [0.25, 0.5, 0.75, 1.0],
+    "save_samples": 4,
+    "output_subdir": "rollout_errors"
+}

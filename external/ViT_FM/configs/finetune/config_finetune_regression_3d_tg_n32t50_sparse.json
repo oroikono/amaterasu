@@ -1,0 +1,48 @@
+{
+    "config_regression": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/eul_ns3d_mix1/TURBO_MASK_scratch_Base_10ep_8gpus_bs3_4acc_10000",
+
+    "epochs": 100,
+    "warmup_epochs": 1,
+    "peak_lr": 0.0002,
+    "end_lr":  0.00002,
+    "batch_size": 6,
+    "tag": "ft_tg3d_n32t50_sparse_dt04",
+
+    "which_data": "tg3d_n32t50",
+    "N_train": 9500,
+
+    "is_post_trained": true,
+    "accumulate_grad": 2,
+    "is_precision_16": false,
+    "reinit_ft": false,
+    "init_new": false,
+
+    "in_dim": 5,
+    "out_dim": 5,
+    "err_group":      [1,3,1],
+    "err_mask_group": [0,1,0],
+    "is_masked": true,
+
+    "_doc_time_step_size":
+        "TG3d N32T50 has phys_dt=0.04 and 51 snapshots; dt_pretrain / dt_n32t50 = 0.4 / 0.04 = 10. Setting time_step_size=10 means one transition unit = 0.4 phys time, matching the pretraining cadence on LowRes/HighRes TG3d (timesteps [0, 0.4, 0.8, 1.2, 1.6, 2.0]).",
+    "max_num_time_steps": 5,
+    "time_step_size": 10,
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1, 2, 3, 4, 5],
+    "is_time": true,
+
+    "_doc_random_train_sampling":
+        "False -> the n32t50 dataset turns off random (t1, dt) sampling and instead deterministically enumerates the 15 coarse all-to-all pairs (0,10),(0,20),(0,30),(0,40),(0,50),(10,20),(10,30),(10,40),(10,50),(20,30),(20,40),(20,50),(30,40),(30,50),(40,50) per trajectory for all splits. Epoch length becomes N_train*15/batch_size.",
+    "random_train_sampling": false,
+
+    "loss_type": "rel",
+    "loss": 1,
+
+    "s": 64,
+    "s_new": 32,
+    "patch_size_new": 2,
+    "interpolate_patch_weights": true,
+
+    "wandb_project_name": "foundation-model",
+    "wandb_run_name": "ft_tg3d_n32t50_sparse_dt04_w8_p2"
+}
