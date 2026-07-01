@@ -1,0 +1,60 @@
+# configs/default.yaml -- resolved per run; dumped with git SHA + seed.
+experiment:
+  name: symcomp_stageA
+  stage: A                 # A | B | C
+  rung: S1S2               # S1 | S1S2 | S1S2S3
+
+mechanisms:                # 7-mechanism 1D-broad set (8th: add 'quadratic')
+  linear: [advection, diffusion, dispersion, reaction, hyperdiffusion]
+  nonlinear: [burgers, cubic]
+coeffs:
+  advection: 1.0
+  diffusion: 0.5
+  dispersion: 0.3
+  reaction: 0.7
+  hyperdiffusion: 0.2
+
+data:
+  N: 256
+  T: 32
+  t_max: 0.5
+  n_ic_train: 256
+  n_ic_test: 64
+  noise_levels: [0.0, 0.001, 0.01]
+  epsilons: [0.0, 0.15, 0.3, 0.5, 0.8]   # S2 commutator sweep
+  ic_modes: 6
+
+split:
+  seeds: [0, 1, 2, 3, 4]    # 5 split-seeds (A2)
+  held_frac: 0.35
+  max_terms: 3
+  triples_sample: 8
+
+model:
+  reps: [grammar, grammar_scrambled, prose_tree, lample_charton, coeff_vector, none]
+  d_model: 256
+  depth: 2
+  max_len: 32
+  fusion: xattn             # B sweeps: [xattn, film]
+  backbone: transformer     # B sweeps: [transformer, vae]
+  scales: [128, 256, 512]   # B scale ablation
+
+train:
+  init_seeds: [0, 1, 2]     # 3 init-seeds (A6)
+  epochs: 80
+  batch: 64
+  lr: 3.0e-4
+  warmup_frac: 0.05
+  weight_decay: 0.01
+  early_stop_patience: 12
+  tasks: [prediction, discovery]
+  match_capacity_tol: 0.02  # A1
+
+eval:
+  bootstrap_resamples: 10000
+  metrics_prediction: [rel_l2]
+  metrics_discovery: [exact_match, mech_f1, coef_mae]
+
+cluster:
+  scratch: ${SCRATCH}/symcomp
+  wandb_mode: offline
