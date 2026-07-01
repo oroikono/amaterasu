@@ -1,0 +1,31 @@
+{
+    "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/pdegym_plus/PDEGYM_PLUS_10ep_ViTB_regression",
+    "tags": ["pdegym_plus"],
+    "error_file": "/cluster/home/braonic/ViT_FM/errors/errors_tmp.csv",
+    
+    "which_data": "eul_riemann_curved",
+    "err_group":      [1,2,1,1,1,1,1,1],
+    "err_mask_group": [1,1,1,0,0,0,0,0],
+    "regression_scheme": [9],
+    "is_masked": true,
+    "dt": 0.1, 
+    "max_num_time_steps": 1,
+    "time_step_size": 18, 
+    "allowed_transitions": [1],
+
+    "save_data": true,
+    "in_one_array": true,
+    "inference_tag": "ar",
+
+    "is_persistence": false,
+    "tag_data": "0",
+    "device": "cuda",
+    "N_samples": 9720,
+    "ood_share": 0.0,
+    "batch_size": 32,
+    "is_ar":true,
+    "is_time": true,
+    "fix_input_to_time_step": null
+    
+    
+}

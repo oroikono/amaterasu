@@ -1,0 +1,39 @@
+{
+    "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/pdegym_plus/PDEGYM_PLUS_10ep_ViTB_regression/finetuned/ns_shear_gencfd",
+    "tags": ["pdegym_plus", "80000"],
+    "config_diffusion": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/ns_shear_gencfd/spectral_80k_FINETUNEDcond_CORRECT_diffusion_gencfd",
+    "ignore_diffusion": true,
+    "sde_steps": 64,
+    "num_ensemble": 1,
+    "guidance_strength": 1.0,
+    "additional_tag": "",
+
+    "error_file": null,
+    "renormalize": true,
+    "save_data": true,
+    "inference_tag": "",
+
+    "N_macro": 10,
+    "N_micro": 512,
+    "which_data": "ns_shear_gencfd_mm",
+    "err_group":      [1,2,1,1,1,1,1,1],
+    "err_mask_group": [0,1,0,0,0,0,0,0],
+    "diffusion_mask_input": [0,1,1,0,0,0,0,0,0],
+    "diffusion_mask_prediction": [0,1,1,0,0,0,0,0,0],
+
+    "regression_scheme": [1],
+    "is_masked": true,
+    "dt": 1.0, 
+    "max_num_time_steps": 1,
+    "time_step_size": 1, 
+    "allowed_transitions": [1],
+    "N_samples": 1000,
+    
+    "tag_data": "0",
+    "device": "cuda",
+    "ood_share": 0.0,
+    "batch_size": 8,
+    "is_ar":true,
+    "is_time": true,
+    "fix_input_to_time_step": null
+}

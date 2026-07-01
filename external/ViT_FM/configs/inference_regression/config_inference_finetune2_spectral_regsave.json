@@ -1,0 +1,31 @@
+{
+    "config_regression_folder": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/pdegym_plus/PDEGYM_PLUS_10ep_ViTB_regression/finetuned/ns_shear_gencfd",
+    "tags": ["pdegym_plus", "80000"],
+    "error_file": "/cluster/home/braonic/ViT_FM/errors/errors_tmp.csv",
+    
+    "which_data": "ns_shear_gencfd",
+    "err_group":      [1,2,1,1,1,1,1,1],
+    "err_mask_group": [0,1,0,0,0,0,0,0],
+    "regression_scheme": [1],
+    "is_masked": true,
+    "dt": 1.0, 
+    "max_num_time_steps": 1,
+    "time_step_size": 1, 
+    "allowed_transitions": [1],
+    "which_type": "train",
+
+    "save_data": true,
+    "in_one_array": true,
+    "inference_tag": "generated_data",
+
+    "is_persistence": false,
+    "tag_data": "0",
+    "device": "cuda",
+    "N_samples": 82000,
+    "ood_share": 0.0,
+    "batch_size": 512,
+    "is_ar":true,
+    "is_time": true,
+    "fix_input_to_time_step": null
+    
+}

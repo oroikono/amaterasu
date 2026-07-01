@@ -1,0 +1,37 @@
+{
+    "config_regression": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/pdegym_plus/PDEGYM_PLUS_10ep_ViTB_regression",
+
+    "epochs": 100,
+    "warmup_epochs": 0,
+    "peak_lr": 0.00025,
+    "end_lr":  0.00001,
+    "batch_size": 20,
+    "tag": "pdegym_plus_stage1_1ar",
+    
+    "which_data": "mhd_orszag8_long",
+    "N_train": 32,
+    
+    "is_wandb": false,
+
+    "rescale_time": true,
+    "ar_train": false,
+    "reinit_ft": true,
+    "init_new": false,
+    "in_dim": 9,
+    "out_dim": 9,
+    "err_group":      [1,2,1,1,1,0,0,0],
+    "err_mask_group": [1,1,1,1,1,0,0,0],
+    "is_masked": true, 
+    
+
+    "max_num_time_steps": 70,
+    "time_step_size": 1,
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1],
+    "is_time": true,
+
+    "loss_type": "rel",
+    "loss": 1,
+    "s": 128
+
+}

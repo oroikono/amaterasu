@@ -1,0 +1,39 @@
+{
+    "config_regression": "/cluster/work/math/braonic/TrainedModels/OOD_Generalization/pdegym_plus3d/PDEGYM_PLUS_3d_10ep_ViTB_regression",
+
+    "epochs": 10,
+    "warmup_epochs": 0,
+    "peak_lr": 0.0005,
+    "end_lr":  0.00005,
+    "batch_size": 3,
+    "tag": "trial",
+    
+
+    "which_data": "eul_riemann_kh3d",
+    "N_train": 32,
+    
+    "reinit_ft": false,
+    "init_new": false,
+    "is_post_trained": false,
+    "is_3d_scratch": true,
+    "accumulate_grad": 4,
+    "is_precision_16": false,
+    
+    "in_dim": 5,
+    "out_dim": 5,
+    "err_group":      [1,3,1],
+    "err_mask_group": [1,1,1],
+    "is_masked": true, 
+    
+
+    "max_num_time_steps": 10,
+    "time_step_size": 2,
+    "fix_input_to_time_step": null,
+    "allowed_transitions": [1],
+    "is_time": true,
+
+    "loss_type": "rel",
+    "loss": 1,
+    "s": 64
+
+}
