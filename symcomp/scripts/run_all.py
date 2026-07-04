@@ -12,6 +12,7 @@ Outputs: results/<stage>_results.csv  and  results/<stage>_curve.png
 """
 import argparse, os, json, csv
 import numpy as np, torch
+from symcomp import registry
 from symcomp.dataset import build_benchmark
 from symcomp.train import train_model
 from symcomp.experiments import (E1_composition_curve, E2_channel_masking,
@@ -31,8 +32,10 @@ def normalize_commutator(curve):
     return [(k / mx, m, s, n) for k, m, s, n in curve]
 
 
-def run_stage(stage, rung, epochs, seeds, d_model, outdir):
+def run_stage(stage, rung, epochs, seeds, d_model, outdir, register=False):
     os.makedirs(outdir, exist_ok=True)
+    if register:
+        registry.work_dir()  # fail fast, not after the first training finishes
     rows = []
     if stage == "A":
         configs = [(r, "xattn") for r in REPRS_A]
@@ -72,6 +75,24 @@ def run_stage(stage, rung, epochs, seeds, d_model, outdir):
             # stash E2 separately
             with open(os.path.join(outdir, f"{stage}_{enc}_{fus}_s{seed}_E2.json"), "w") as f:
                 json.dump(e2, f, indent=2)
+            if register:
+                # mirror this cell into the durable registry using the fixed
+                # master schema (local dry-run of the Euler storage path)
+                run = registry.Run.create(
+                    {"stage": stage, "rung": rung, "encoder": enc, "fusion": fus,
+                     "seed": seed, "epochs": epochs, "d_model": d_model},
+                    cell_tag=f"{stage}-{enc}-{fus}-s{seed}",
+                    seeds={"split": seed, "init": seed},
+                    param_counts={enc: count_params(model)})
+                run.append_rows([
+                    {"stage": stage, "encoder": enc, "fusion": fus,
+                     "backbone": "transformer", "split_seed": seed,
+                     "init_seed": seed, "task": "prediction", "commutator": k,
+                     "metric_name": "rel_l2", "metric_value": m,
+                     "params": count_params(model)}
+                    for k, m, s, n in e1["curve"]])
+                run.archive_to_home()
+                print(f"registered {run.run_id}")
 
     csv_path = os.path.join(outdir, f"{stage}_results.csv")
     with open(csv_path, "w", newline="") as f:
@@ -119,5 +140,9 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--d_model", type=int, default=128)
     ap.add_argument("--outdir", default="results")
+    ap.add_argument("--register", action="store_true",
+                    help="also record runs in the durable registry "
+                         "($SYMCOMP_WORK_DIR; see symcomp/registry.py)")
     a = ap.parse_args()
-    run_stage(a.stage, a.rung, a.epochs, a.seeds, a.d_model, a.outdir)
+    run_stage(a.stage, a.rung, a.epochs, a.seeds, a.d_model, a.outdir,
+              register=a.register)

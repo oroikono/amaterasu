@@ -94,4 +94,25 @@ export SYMCOMP_HOME_ARCHIVE=/cluster/home/$USER/symcomp_archive
 ```
 
 Replace `<group>` with the actual Euler shareholder/group path. Do not hardcode
-private paths into committed code.
+private paths into committed code. `symcomp/symcomp/registry.py` reads these
+variables at runtime and refuses to run on a cluster node without
+`SYMCOMP_WORK_DIR` set. The venv also belongs under `$SYMCOMP_WORK_DIR/venvs/`
+(NOT scratch — the purge would delete it mid-project).
+
+### flock probe (run once before the Stage A array)
+
+The registry serializes master-CSV appends with `fcntl.flock`. Lustre/NFS
+mounts only honor that if mounted with flock support — verify on the actual
+work filesystem before trusting concurrent appends:
+
+```bash
+cd ~/code/amaterasu/symcomp
+SYMCOMP_TEST_DIR="$SYMCOMP_WORK_DIR" PYTHONPATH=. python tests/test_registry.py
+```
+
+`SYMCOMP_TEST_DIR` points the test's temp dirs at the work filesystem (they
+would otherwise land on node-local /tmp and prove nothing). The 8-process
+concurrent-append check ([6]) fails or errors if flock is absent/incoherent
+on this mount. If it does, per-run `rows.csv` files are
+still safe (no cross-task contention) — regenerate the union afterwards with
+`python -c "from symcomp.registry import rebuild_master; rebuild_master()"`.

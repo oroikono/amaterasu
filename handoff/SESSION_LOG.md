@@ -123,3 +123,68 @@ docstring spec.
   whether to commit+push the pending handoff updates.
 - Next action if this session dies here: same as previous entry — the plan
   is not blocked on Euler, only the final path value is.
+
+## 2026-07-04 07:38 CEST — Claude Code (Alienware/WSL2) — TODO #1 implemented; mid-review checkpoint
+
+- User gave go-ahead (env-var-parameterized, start before Euler probe) and
+  approved commit+push; handoff updates pushed as `f3b664f`.
+- **Implemented since then (working tree, uncommitted):**
+  - `symcomp/symcomp/registry.py` (NEW): SYMCOMP_WORK_DIR/SYMCOMP_HOME_ARCHIVE
+    resolution (refuses scratch-only cluster runs), `Run.create` →
+    `runs/<run_id>/` with config.json + manifest.json, file-locked append-only
+    master CSV with the fixed Stage-A schema, `get_run`/`list_runs`,
+    `archive_to_home` (size-capped, skips checkpoints).
+  - Fixed both survey bugs: `encoders.py` scrambled-grammar now seeds from
+    sha256 (H4 control reproducible across processes); `capacity.py` both
+    resolvers now return `(out, target, residuals)` — values always usable.
+  - Wired: `run_task.py` registers runs via registry; `run_all.py --register`
+    mirrors local runs into the registry; `configs/default.yaml` cluster
+    section documents work_dir/home_archive; both sbatch scripts hardened
+    (`set -euo pipefail`, unconditional eth_proxy, SYMCOMP_WORK_DIR guard,
+    logs/ prefix + gitkeep).
+  - `tests/test_registry.py` (NEW): 7 checks incl. 8-process concurrent
+    append (200/200 rows intact) and cross-PYTHONHASHSEED scrambled
+    determinism. **All green**; physics + smoke also re-run green.
+- **Review state:** 4-lens adversarial review produced 22 raw findings, but
+  the usage limit hit mid-verification (~03:15 CEST) — findings are
+  UNVERIFIED. Session resumed 07:38 CEST; triaging them inline now. Key
+  themes: fcntl.flock semantics on Lustre `/cluster/work` (unverifiable off-
+  cluster → need per-run rows.csv as source of truth + master rebuild
+  helper + on-cluster probe), no run_id column → requeue duplicates not
+  dedupable, run_id 1-second collisions, non-atomic home-archive copy,
+  venv itself lives on purgeable scratch, README/handoff staleness.
+- Next action if this session dies here: apply the triaged fixes (run_id
+  column + rebuild_master + collision suffix + atomic archive copy + venv
+  relocation in sbatch + README/docs), rerun tests, update handoff docs,
+  commit + push.
+
+## 2026-07-04 07:44 CEST — Claude Code (Alienware/WSL2) — TODO #1 COMPLETE (code side); all tests green
+
+- Applied all triaged review fixes:
+  - registry.py: `run_id` provenance column auto-stamped on every CSV row
+    (requeue dedup), `rebuild_master()` regenerates master.csv from per-run
+    rows.csv (source of truth; flock-failure recovery path), same-second
+    run-id collision suffix, torn-tail guard on locked appends, atomic
+    (tmp+rename) home-archive copy, orphan-run-dir cleanup on failed create,
+    local work-dir fallback anchored to repo root.
+  - sbatch scripts: venv moved OFF scratch → `${SYMCOMP_VENV:-$SYMCOMP_WORK_DIR/venvs/symcomp}`
+    (purge would have killed it mid-project); WORK_DIR guard added to
+    sbatch_data.sh too.
+  - run_all.py `--register` now fails fast (resolves work dir before
+    training); default.yaml comment no longer implies yaml env expansion;
+    run_task.py TODO points at `registry.file_hashes` for shard provenance.
+  - README cluster workflow rewritten (export SYMCOMP_WORK_DIR first, venv
+    on work storage, aggregate from `$SYMCOMP_WORK_DIR/results/master.csv` —
+    old scratch path was stale); docs/euler_pipeline.md gained a flock-probe
+    section (`SYMCOMP_TEST_DIR=$SYMCOMP_WORK_DIR ... test_registry.py`).
+- **Tests: registry 9/9, physics, smoke — ALL PASS** (WSL2, miniconda base).
+- Handoff updated: TODO.md (survey bugs marked FIXED; storage item now
+  "Euler validation only"), DECISIONS.md (+D11 storage design), PLAN.md
+  (validation #1 rewritten).
+- Committing + pushing this change set now.
+- **Next actions for whoever picks this up:**
+  1. On Euler: storage probe (`my_share_info`, `lquota`), export
+     SYMCOMP_WORK_DIR/-HOME_ARCHIVE, venv on work storage, flock probe,
+     re-run physics+registry tests on the cluster (TODO #1-3).
+  2. Then implement `scripts/gen_data.py` per its docstring spec (TODO #4).
+  3. Then `scripts/run_task.py` steps 3-8 (TODO #5).

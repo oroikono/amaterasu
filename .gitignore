@@ -5,3 +5,6 @@ venv/
 results/
 wandb/
 *.npz
+**/logs/*
+!**/logs/.gitkeep
+work/

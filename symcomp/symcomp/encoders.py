@@ -16,6 +16,7 @@ the corpus so the four are comparable at matched embedding capacity.
                        style). Isolates "structure" vs "just the numbers".
 """
 from __future__ import annotations
+import hashlib
 from typing import Iterable
 import numpy as np
 from .operators import Operator, PRIMITIVES
@@ -122,9 +123,12 @@ def enc_grammar_scrambled(op: Operator) -> list[str]:
         + [f"COEF_{_q(c)}" for c in _COEFF_BINS]
     ))
     sm = _scramble_map(vocab_tokens)
-    # ALSO shuffle the ORDER within each term so the additive spine is destroyed
+    # ALSO shuffle the ORDER within each term so the additive spine is destroyed.
+    # Seed from a stable digest, NOT hash(): str hashing is salted per process
+    # (PYTHONHASHSEED), which would make the H4 control arm irreproducible.
     out = [sm.get(t, t) for t in base]
-    rng = np.random.default_rng(hash(op.canonical_str()) % (2**32))
+    digest = hashlib.sha256(op.canonical_str().encode()).digest()
+    rng = np.random.default_rng(int.from_bytes(digest[:4], "little"))
     rng.shuffle(out)
     return out
 

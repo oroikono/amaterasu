@@ -75,11 +75,12 @@ is the minimum publishable core; B and C strengthen and extend.
 - Stage A at day 14 is the freeze point / minimum publishable core.
 
 ## What still needs validation
-1. **Durable storage wiring on Euler.** Confirm the group's `/cluster/work/<group>`
-   path and quota (`lquota /cluster/work/<group>`); repoint all SLURM outputs
-   there; add a run-registry + nightly copy of small artifacts to home; verify a
-   run can be fetched back by ID after >15 days. THIS IS THE TOP VALIDATION ITEM
-   — without it, early runs are deleted before the project ends.
+1. **Durable storage wiring on Euler.** CODE DONE 2026-07-04 (see D11:
+   `symcomp/symcomp/registry.py`, env-var work dir, run registry, locked master
+   CSV, home archive; SLURM outputs repointed). STILL TO VALIDATE ON THE
+   CLUSTER: group path + quota (`my_share_info`, `lquota`), the flock probe
+   (docs/euler_pipeline.md), and fetch-by-ID after >15 days. Without that
+   validation, early runs could still be at risk.
 2. **Module stack + CUDA torch** match on the current Euler default (the versions
    in `cluster/*.sh` are placeholders).
 3. **`gen_data.py` and `run_task.py`** are specs, not finished code — implement and

@@ -69,6 +69,22 @@ rather than something contaminated by numerical error.
 project would lose its earliest runs. Results go to group work/project storage +
 home + wandb; raw regenerable data may use scratch.
 
+### D11 — Storage/registry design (implemented 2026-07-04)
+**Why each choice:** (a) Paths come from env vars (`SYMCOMP_WORK_DIR`,
+`SYMCOMP_HOME_ARCHIVE`, optional `SYMCOMP_VENV`) — never hardcoded group paths
+(repo rule); `registry.work_dir()` REFUSES to run on a cluster node (detected
+via `$SCRATCH`) without `SYMCOMP_WORK_DIR`, so a misconfigured job fails loudly
+instead of writing to purgeable scratch. (b) Per-run `runs/<run_id>/rows.csv`
+is the source of truth (zero cross-task contention); the file-locked
+`results/master.csv` is a convenience union, and `rebuild_master()` can always
+regenerate it — this de-risks unknown flock semantics on Lustre. (c) Every row
+is stamped with a `run_id` column (timestamp + git SHA + cell + collision
+suffix) so requeued/re-run SLURM tasks are dedupable; the 11 pre-registered
+analysis columns are unchanged. (d) The venv lives on work storage, not
+scratch, so the 15-day purge cannot kill the software mid-project. (e) Small
+artifacts are copied to the home archive at end of job (atomic rename) as a
+second copy on backed-up storage.
+
 ## Open questions
 1. **Which group work/project path and quota** on Euler? (`/cluster/work/<group>`)
    — needed to finalize storage wiring. Confirm with `lquota`.

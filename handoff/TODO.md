@@ -3,17 +3,7 @@
 > Progress is logged with timestamps in `SESSION_LOG.md` — append an entry
 > there whenever you start/stop meaningful work.
 
-## Newly found issues (2026-07-04 repo survey — see SESSION_LOG.md for detail)
-- **[BUG, fix before any real run]** `symcomp/encoders.py:127`
-  `enc_grammar_scrambled` uses salted Python `hash()` for its shuffle → the
-  H4 scrambled-grammar control is not reproducible across processes. Use a
-  stable hash (e.g. `zlib.crc32` / hashlib) or pin PYTHONHASHSEED.
-- **[BUG-RISK]** `symcomp/capacity.py` returns a `(value, "residual…")`
-  tuple instead of an int when capacity tolerance is exceeded — callers
-  crash if they pass it as `hidden_override`. Normalize the return type.
-- **[HARDENING]** sbatch scripts: add `set -euo pipefail`; remove the
-  `|| module load eth_proxy` silent fallback (load eth_proxy
-  unconditionally, both scripts); give SLURM logs a directory prefix.
+## Open issues (2026-07-04 repo survey — see SESSION_LOG.md for detail)
 - **[TEST GAP]** ETDRK4 solvers (`solve_varcoeff_advdiff`, `solve_burgers`)
   — the S2/S3 data generators — have no automated validation (only S1 is
   machine-zero tested). Matches PLAN "needs validation" #8; add a refined-
@@ -21,22 +11,37 @@
 - **[MINOR]** `run_all.py` E3 bare try/except silently records NaN;
   `aggregate.py` discovery metrics currently have no producer (run_task.py
   unimplemented).
+- **[UNVERIFIED, check on Euler]** `fcntl.flock` coherence on the
+  `/cluster/work` mount — probe per docs/euler_pipeline.md before the Stage A
+  array; `registry.rebuild_master()` is the recovery path if it fails.
 
 ## Status notes (2026-07-04)
 - Phase 0 local validation is DONE on Alienware: `tests/test_physics.py`
   (machine-zero identity, monotone commutator) and `tests/smoke.py` both
   PASS (miniconda base, torch 2.8.0+cu128). No project venv exists yet.
+- FIXED (07-04, tested): scrambled-grammar salted-hash bug (H4 now stable,
+  sha256-seeded); capacity.py tuple return (now `(out, target, residuals)`);
+  sbatch hardening (`set -euo pipefail`, unconditional eth_proxy, logs/,
+  SYMCOMP_WORK_DIR guards, venv moved off scratch).
+- DONE (07-04, code side): durable storage + run registry
+  (`symcomp/symcomp/registry.py` + `tests/test_registry.py`, 9 checks green
+  incl. 8-process concurrent append and rebuild-from-run-dirs). Cluster-side
+  validation still pending (item 1 below).
 
 ## Immediate next actions (this week)
-1. **[BLOCKER] Wire durable result storage on Euler.**
-   - Confirm group work/project path + quota: `lquota /cluster/work/<group>`.
-   - Repoint all SLURM outputs from `$SCRATCH` to `/cluster/work/<group>/symcomp/`.
-   - Add a run-registry helper: each run -> `runs/<run_id>/` with resolved config,
-     result CSV rows, manifest.json (seeds, data hashes, param counts), checkpoint.
-   - Add a nightly/end-of-job copy of small artifacts (CSVs, plots, manifests) to
-     `/cluster/home`. Verify a run can be fetched by ID after >15 days.
-2. **Stand up the Euler venv.** Match the module stack + torch CUDA build to the
-   current cluster default (placeholders in `cluster/*.sh`). Pin requirements.
+1. **[BLOCKER → Euler validation] Validate durable storage on Euler.**
+   Code is implemented (registry.py; runs/<run_id>/ + manifest + locked
+   master CSV + home archive). Remaining, on the cluster:
+   - Confirm group work path + quota: `my_share_info`; `lquota /cluster/work/<group>`.
+   - `export SYMCOMP_WORK_DIR=/cluster/work/<group>/symcomp` (+ HOME_ARCHIVE);
+     add both to the login shell profile.
+   - Run the flock probe (docs/euler_pipeline.md): `SYMCOMP_TEST_DIR=$SYMCOMP_WORK_DIR
+     PYTHONPATH=. python tests/test_registry.py`.
+   - Verify a run can be fetched by ID after >15 days (calendar reminder).
+2. **Stand up the Euler venv — on work storage, NOT scratch**
+   (`$SYMCOMP_WORK_DIR/venvs/symcomp`; sbatch scripts default to this, or
+   override via `SYMCOMP_VENV`). Match the module stack + torch CUDA build to
+   the current cluster default (placeholders in `cluster/*.sh`). Pin requirements.
 3. **Run physics validation on the cluster:** `python tests/test_physics.py` must
    print the machine-zero commuting identity and the monotone commutator.
 4. **Implement `scripts/gen_data.py`** per its docstring spec; launch the data

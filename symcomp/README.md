@@ -122,24 +122,35 @@ correlation from someone else is the one thing that scoops the core thesis.
 ## Cluster workflow (Euler)
 
 ```bash
-# 0. env (adjust module versions to current Euler default — see EXPERIMENT_PLAN §9)
-module load stack/2024-06 gcc python_cuda/3.11
-python -m venv $SCRATCH/venvs/symcomp && source $SCRATCH/venvs/symcomp/bin/activate
+# 0. durable storage FIRST (D10): scratch is purged at 15 days, unbacked-up.
+#    Confirm the group path + quota (my_share_info; lquota), then:
+export SYMCOMP_WORK_DIR=/cluster/work/<group>/symcomp        # durable runs/results
+export SYMCOMP_HOME_ARCHIVE=/cluster/home/$USER/symcomp_archive
+mkdir -p "$SYMCOMP_WORK_DIR" logs
+
+# 1. env (adjust module versions to current Euler default — see EXPERIMENT_PLAN §9)
+#    The venv lives on WORK storage, not scratch, so the purge can't kill it.
+module load stack/2024-06 gcc python_cuda/3.11 eth_proxy
+python -m venv "$SYMCOMP_WORK_DIR/venvs/symcomp" && source "$SYMCOMP_WORK_DIR/venvs/symcomp/bin/activate"
 pip install -r requirements.txt
 
-# 1. validate physics on the cluster (machine-zero commuting identity)
+# 2. validate physics + the run registry on the cluster
 PYTHONPATH=. python tests/test_physics.py
+SYMCOMP_TEST_DIR="$SYMCOMP_WORK_DIR" PYTHONPATH=. python tests/test_registry.py
+#  ^ probes flock/concurrency on the actual work filesystem (docs/euler_pipeline.md)
 
-# 2. generate sharded data (array job; one slice per task)
+# 3. generate sharded data (array job; shards on scratch — regenerable)
 sbatch cluster/sbatch_data.sh
 
-# 3. run Stage A (6 reps × 5 split-seeds × 3 init-seeds = 90 GPU tasks)
+# 4. run Stage A (6 reps × 5 split-seeds × 3 init-seeds = 90 GPU tasks);
+#    each task registers runs/<run_id>/ + appends to results/master.csv
+#    under $SYMCOMP_WORK_DIR via symcomp/registry.py
 sbatch cluster/sbatch_stageA.sh
 
-# 4. aggregate -> H1 table, H2 commutator regression, H4 panel, money plot
-PYTHONPATH=. python scripts/aggregate.py --csv $SCRATCH/symcomp/runs/stageA/all.csv \
+# 5. aggregate -> H1 table, H2 commutator regression, H4 panel, money plot
+PYTHONPATH=. python scripts/aggregate.py --csv $SYMCOMP_WORK_DIR/results/master.csv \
     --task prediction --metric rel_l2
-PYTHONPATH=. python scripts/aggregate.py --csv $SCRATCH/symcomp/runs/stageA/all.csv \
+PYTHONPATH=. python scripts/aggregate.py --csv $SYMCOMP_WORK_DIR/results/master.csv \
     --task discovery --metric exact_match
 ```
 

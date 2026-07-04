@@ -19,7 +19,9 @@ IMPLEMENTATION SPEC for Euler (wire these against dataset shards on $SCRATCH):
      stratum; write one CSV row per (operator, task, metric).
   8. dump resolved config + git SHA + seed + data-manifest hash for repro.
 """
-import argparse, itertools, os, subprocess, json
+import argparse, itertools, json, os
+
+from symcomp import registry
 
 REPS = ["grammar", "grammar_scrambled", "prose_tree", "lample_charton",
         "coeff_vector", "none"]
@@ -38,27 +40,38 @@ def main():
     ap.add_argument("--stage", default="A")
     ap.add_argument("--task_index", type=int, required=True)
     ap.add_argument("--data_dir", default=os.environ.get("SCRATCH", ".") + "/symcomp/data")
-    ap.add_argument("--outdir", required=True)
+    ap.add_argument("--workdir", default=None,
+                    help="durable output root; defaults to $SYMCOMP_WORK_DIR "
+                         "via symcomp.registry (refuses scratch on clusters)")
     a = ap.parse_args()
 
     rep, split_seed, init_seed = resolve_cell(a.task_index)
-    os.makedirs(a.outdir, exist_ok=True)
-    try:
-        sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
-    except Exception:
-        sha = "nogit"
-    meta = {"rep": rep, "split_seed": split_seed, "init_seed": init_seed,
-            "stage": a.stage, "git": sha, "task_index": a.task_index}
-    print("RESOLVED CELL:", json.dumps(meta))
-    # ---- TODO(Euler): steps 3-8 above. The local pipeline in
+    cell = {"rep": rep, "split_seed": split_seed, "init_seed": init_seed,
+            "stage": a.stage, "task_index": a.task_index}
+    print("RESOLVED CELL:", json.dumps(cell))
+
+    # Durable run registration (D10): run dir + manifest live under the work
+    # dir, never scratch. Raw shards stay on --data_dir (regenerable).
+    with open(a.config) as f:
+        config_text = f.read()
+    run = registry.Run.create(
+        {"config_path": a.config, "config_text": config_text, "cell": cell},
+        cell_tag=f"cell{a.task_index:03d}", root=a.workdir, **cell)
+    print(f"registered run {run.run_id} -> {run.dir}")
+
+    # ---- TODO(Euler): steps 3-8 of the spec above. The local pipeline in
     #      symcomp.{splits,dataset,train,experiments} + scripts.aggregate already
     #      implements the logic at toy scale; this runner wires it to shards +
-    #      the capacity harness + both heads. Keep the CSV schema:
-    #      stage,encoder,fusion,backbone,split_seed,init_seed,task,commutator,
-    #      metric_name,metric_value,params
-    with open(os.path.join(a.outdir, f"cell_{a.task_index}_meta.json"), "w") as f:
-        json.dump(meta, f, indent=2)
-    print("wrote cell meta; implement training/eval per spec to emit results CSV.")
+    #      the capacity harness + both heads. Emit result rows through
+    #      run.append_rows(rows) -- the registry enforces the fixed master
+    #      schema (registry.MASTER_SCHEMA) and file-locks the master CSV.
+    #      When loading shards (step 4), record their provenance in the
+    #      manifest via registry.file_hashes(shard_paths) (spec item:
+    #      data-file hashes). Finish with run.archive_to_home() so small
+    #      artifacts survive on home storage even if work storage has an
+    #      incident.
+    run.archive_to_home()
+    print("wrote run manifest; implement training/eval per spec to emit rows.")
 
 
 if __name__ == "__main__":

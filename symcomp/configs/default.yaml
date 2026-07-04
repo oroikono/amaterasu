@@ -56,5 +56,12 @@ eval:
   metrics_discovery: [exact_match, mech_f1, coef_mae]
 
 cluster:
-  scratch: ${SCRATCH}/symcomp
+  # Documentation of the storage contract -- these yaml values are NOT
+  # env-expanded or read by code. symcomp/registry.py reads the environment
+  # variables directly at runtime and raises on cluster nodes if
+  # SYMCOMP_WORK_DIR is unset (D10: results must never live only on purgeable
+  # scratch). Regenerable data shards may stay on scratch.
+  work_dir: ${SYMCOMP_WORK_DIR}          # e.g. /cluster/work/<group>/symcomp
+  home_archive: ${SYMCOMP_HOME_ARCHIVE}  # e.g. /cluster/home/$USER/symcomp_archive
+  scratch: ${SCRATCH}/symcomp            # raw trajectory shards only
   wandb_mode: offline

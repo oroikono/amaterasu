@@ -20,7 +20,14 @@ def build_arm(kind, n_grid, T_out, vocab_size, d_model, n_mech, max_len,
 def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
                              max_len, tol=0.02):
     """Binary-search a per-arm data-branch hidden size so every arm matches the
-    symbolic-arm param count within `tol`. Returns {rep: hidden_override|None}.
+    symbolic-arm param count within `tol`.
+
+    Returns (overrides, target, residuals):
+      overrides  {rep: hidden_override|None} -- always directly usable as the
+                 model's data_hidden_override
+      target     the reference param count
+      residuals  {rep: err_frac} for arms whose best match exceeds tol
+                 (empty when all arms are within tolerance)
 
     NOTE (Euler TODO): integer hidden sizes leave a ~2-3% residual on the
     coeff_vector / data_only arms. To close it fully, either (a) add a matched
@@ -41,7 +48,7 @@ def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
                             data_hidden_override=h)
         return count_params(m)
 
-    out = {}
+    out, residuals = {}, {}
     for rep in reps:
         native = params_for(rep, None)
         if abs(native - target) / target <= tol:
@@ -58,14 +65,17 @@ def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
         err = abs(params_for(rep, h) - target) / target
         out[rep] = h
         if err > tol:
-            out[rep] = (h, f"residual {err:.1%}")
-    return out, target
+            residuals[rep] = err
+    return out, target, residuals
 
 
 def resolve_width_mults(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
                         max_len, tol=0.02, search=(1.0, 1.1, 1.2, 1.3, 1.4, 1.5,
                                                   1.6, 1.8, 2.0, 2.2, 2.5)):
-    """Return {rep: width_mult} so all arms match the median symbolic-arm size.
+    """Return ({rep: width_mult}, target, {rep: err_frac}) so all arms match
+    the reference symbolic-arm size. width_mult values are always usable ints;
+    arms that cannot match within tol are listed in the residuals dict (use the
+    hidden-size override there instead).
 
     width_mult is applied as an integer-ish multiplier inside DataEncoder; here
     we approximate by scanning a small set and picking the closest match. For
@@ -78,7 +88,7 @@ def resolve_width_mults(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
                     d_model, n_mech, max_len, width_mult=1)
     target = count_params(ref)
 
-    out = {}
+    out, residuals = {}, {}
     for rep in reps:
         vs = vocab_sizes.get(rep, 8) if rep not in ("coeff_vector", "none") else 1
         best_wm, best_err = 1, 1e9
@@ -92,7 +102,6 @@ def resolve_width_mults(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
                 best_err, best_wm = err, wmi
         out[rep] = best_wm
         if best_err > tol:
-            # not matchable by integer width alone -> flag for hidden-size override
-            out[rep] = (best_wm, f"residual {best_err:.1%} > tol; "
-                                 f"use hidden-size override on Euler")
-    return out, target
+            # not matchable by integer width alone -> use hidden-size override
+            residuals[rep] = best_err
+    return out, target, residuals
