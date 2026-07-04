@@ -188,3 +188,36 @@ docstring spec.
      re-run physics+registry tests on the cluster (TODO #1-3).
   2. Then implement `scripts/gen_data.py` per its docstring spec (TODO #4).
   3. Then `scripts/run_task.py` steps 3-8 (TODO #5).
+
+## 2026-07-04 19:38 CEST — Claude Code (Alienware/WSL2) — night shift start; Euler SSH blocked, going local-first
+
+- User on ETH VPN with an open Euler session; instructed: run the whole plan
+  until usage limit, log lean + often, real large-scale runs only (no toy
+  results passed off as real).
+- SSH euler: publickey DENIED from WSL (both `ooikonomou` alias + `oroikon`);
+  ControlMaster socket stale. Posted the WSL pubkey
+  (~/.ssh/id_ed25519.pub, ed25519 ...VAzL oroikon@gmail.com) in chat for the
+  user to append to Euler ~/.ssh/authorized_keys. Will retry periodically.
+- Plan while blocked: implement gen_data.py + run_task.py (real trainer,
+  both heads) locally, dry-run on the local GPU at reduced-but-real scale,
+  review, push. If SSH opens: storage probe, work-dir venv, cluster tests,
+  submit data + Stage A arrays with a background monitor.
+- Next action if session dies: check `ssh euler hostname`; if OK follow
+  TODO #1-3 cluster steps, else continue gen_data.py implementation.
+
+## 2026-07-04 20:05 CEST — Claude (Alienware) — CRITICAL S2 bug found+fixed; solvers validated
+
+- **Found a real pre-existing science bug** while validating solvers at
+  production scale: S2 nu-profile used ABSOLUTE variation amplitude →
+  nu(x)=0.5+eps·cos goes NEGATIVE for eps>0.5 → locally backward heat →
+  ill-posed. Empirically: max|u| = 2.4e51 (eps=0.6), 1.1e204 (eps=0.8) at
+  N=128. The toy benchmark's top S2 commutator bins (and smoke's
+  relL2=1.000±0.000 top bin) were blow-up garbage.
+- **Fix:** nu amplitude now RELATIVE (nu=0.5·(1+eps·cos), min>0 for eps<1)
+  in dataset.py + tests. Commutator still strictly monotone (0→165697).
+  Bounded solutions across the sweep (max|u|≈2.15). a-profile unchanged.
+- Added batched solvers (solve_*_batch, exact match to singles) +
+  `stable_n_sub` (explicit-RK4 stability at N=256 needs n_sub≈5349, not
+  2000 — default would have blown up) + tests/test_solvers.py [6 checks,
+  all green]. This closes the ETDRK4 test-gap TODO.
+- physics + solvers green. Next: gen_data.py.

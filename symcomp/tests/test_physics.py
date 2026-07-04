@@ -28,13 +28,17 @@ print(f"[1] commuting split identity max rel err = {err:.2e}  (expect ~1e-13)")
 assert err < 1e-10, "commuting identity broken!"
 
 # 2) VARIABLE-COEFF COMMUTATOR grows monotonically with epsilon.
-print("[2] ||[a(x)d_x, nu(x)d_xx]|| vs epsilon:")
+# Profiles use the WELL-POSED data convention (nu amplitude RELATIVE to its
+# base so nu(x) = nu0*(1+eps*cos) stays positive for eps < 1; an absolute
+# amplitude > nu0 gives locally negative diffusion -> ill-posed blow-up).
+print("[2] ||[a(x)d_x, nu(x)d_xx]|| vs epsilon (well-posed profiles):")
 prev = -1
 for eps in (0.0, 0.15, 0.3, 0.5, 0.8):
     af = make_varcoeff_profile(N, Ldom, 1.0, eps, k=1)
-    nf = make_varcoeff_profile(N, Ldom, 0.5, eps, k=2)
+    nf = make_varcoeff_profile(N, Ldom, 0.5, eps * 0.5, k=2)
+    assert nf.min() > 0, "nu(x) must stay positive (well-posedness)"
     c = variable_coeff_commutator_norm(af, nf, N, Ldom)
-    print(f"    eps={eps:.2f}  ||[A,B]||={c:.4f}")
+    print(f"    eps={eps:.2f}  nu_min={nf.min():+.3f}  ||[A,B]||={c:.4f}")
     assert c >= prev - 1e-9, "commutator not monotone in epsilon!"
     prev = c
 print("    -> monotone increasing. commutator knob works.")

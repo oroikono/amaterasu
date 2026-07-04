@@ -111,8 +111,13 @@ def build_benchmark(
         for eps in epsilons:
             if eps == 0.0:
                 continue
+            # WELL-POSEDNESS: the nu profile uses RELATIVE amplitude
+            # (nu(x) = nu_coef*(1 + eps*cos), min = nu_coef*(1-eps) > 0 for
+            # eps < 1). An absolute amplitude eps > nu_coef makes nu(x)
+            # negative -> locally backward heat -> ill-posed blow-up (verified:
+            # max|u| ~ 1e204 at eps=0.8), which would poison the S2 stratum.
             a_field = make_varcoeff_profile(N, Ldom, a_coef, eps, k=1)
-            nu_field = make_varcoeff_profile(N, Ldom, nu_coef, eps, k=2)
+            nu_field = make_varcoeff_profile(N, Ldom, nu_coef, eps * nu_coef, k=2)
             comm = variable_coeff_commutator_norm(a_field, nu_field, N, Ldom)
             # symbolic encoding still names {advection, diffusion}; the varcoeff
             # detail is the part the symbol channel CANNOT carry -- that's the
