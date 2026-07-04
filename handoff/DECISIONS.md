@@ -69,6 +69,16 @@ rather than something contaminated by numerical error.
 project would lose its earliest runs. Results go to group work/project storage +
 home + wandb; raw regenerable data may use scratch.
 
+### D11 — ViT_FM is a Stage B numerical-lane candidate, not a Stage A dependency
+**Why:** The user-provided Codex Desktop file list for `ViT_FM` shows a substantial
+CFD / diffusion / regression / spectral-resolver codebase with ViT modules and
+small-to-base configs. It may be useful as a stronger trajectory encoder, but the
+core SymComp claim must first be validated on controlled small datasets with the
+simple numerical encoder. Treat `ViT_FM` as a Stage B backbone robustness arm only
+after durable storage, data generation, run-task wiring, and Stage A symbolic-arm
+comparisons are working. Do not vendor or commit the external code until its
+license, size, dependencies, hardcoded paths, and import boundaries are inspected.
+
 ## Open questions
 1. **Which group work/project path and quota** on Euler? (`/cluster/work/<group>`)
    — needed to finalize storage wiring. Confirm with `lquota`.

@@ -49,8 +49,12 @@
    H1 table, H2 regression, H4 panel, money plot. **This is the freeze point.**
 7. **Add the autoregressive discovery decoder** + discovery metrics (exact-match,
    mechanism F1, coefficient MAE) for the symbolic arms.
-8. **Stage B:** fusion (xattn/FiLM), backbone (add the VAE arm), scale sweep,
-   noise levels. Confirm H1 survives.
+8. **Stage B:** fusion (xattn/FiLM), backbone (add the VAE arm), optional
+   `ViT_FM` numerical-lane backbone candidate, scale sweep, noise levels. Confirm
+   H1 survives. Inspect `ViT_FM` before vendoring or integration: license, size,
+   dependencies, hardcoded paths, input tensor shapes, whether `ViTModule` /
+   `ViTModulev2` can be imported as standalone encoders, and whether tiny configs
+   can run on small SymComp trajectories.
 9. **Stage C:** data-budget curve; decompose direction + nu->0 singular limit (H5);
    the S3 Burgers/cubic rung; finalize commutator regression.
 10. **Close the capacity residual** on coeff_vector/data_only or report exact

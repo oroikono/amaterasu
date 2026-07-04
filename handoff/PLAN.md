@@ -51,6 +51,11 @@ is the minimum publishable core; B and C strengthen and extend.
 ### Phase 5 — Stage B robustness (days 15–21)
 - Sweep fusion (xattn vs FiLM), backbone (transformer vs VAE — VAE arm to be
   implemented), model scale (d_model 128/256/512), and noise levels.
+- Evaluate `ViT_FM` as an optional numerical-lane backbone candidate after Stage A
+  is green. Keep it out of the Stage A critical path: first run the controlled
+  small SymComp datasets with the simple baseline encoder, then test whether a
+  stronger ViT/CFD trajectory encoder improves prediction or discovery without
+  erasing the symbolic-representation effect.
 - Confirm H1 survives every robustness axis.
 
 ### Phase 6 — Stage C extensions (days 22–27)
