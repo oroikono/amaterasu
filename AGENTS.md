@@ -41,7 +41,14 @@ only under personal scratch. Use configurable environment variables for work and
 home/archive paths rather than hardcoded private cluster paths.
 
 ## Handoff Discipline
-At the end of meaningful work, update:
+Keep `handoff/SESSION_LOG.md` up to date DURING work, not only at the end:
+append a timestamped entry at session start (where things stand), at every
+meaningful milestone or direction change, and before anything risky. Sessions
+can die without warning (usage limits, crashes); the log is what lets the next
+person or agent resume. Each entry ends with "next action if this session dies
+here."
+
+At the end of meaningful work, also update:
 
 - `handoff/TODO.md` with next actions
 - `handoff/DECISIONS.md` with durable decisions
