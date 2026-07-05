@@ -96,6 +96,67 @@ class Fusion(nn.Module):
             return self.ln(data_tok + a)
 
 
+class ARDecoder(nn.Module):
+    """Autoregressive symbolic decoder for the DISCOVERY task (H3).
+
+    Decodes the operator's token sequence in the REPRESENTATION'S OWN
+    vocabulary, conditioned on the pooled data-branch embedding of the
+    observed trajectory prefix. Two ids are reserved beyond the encoder
+    vocab: BOS = vocab_size, EOS = vocab_size + 1 (internal to this head;
+    the encoder vocab used for CONDITIONING is untouched, so prediction-side
+    comparability with non-decoder stages is preserved).
+    """
+
+    def __init__(self, vocab_size, d_model, max_len, depth=2):
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.bos = vocab_size
+        self.eos = vocab_size + 1
+        self.emb = nn.Embedding(vocab_size + 2, d_model)
+        self.pos = nn.Parameter(0.02 * torch.randn(1, max_len + 1, d_model))
+        layer = nn.TransformerDecoderLayer(d_model, nhead=4,
+                                           dim_feedforward=4 * d_model,
+                                           batch_first=True)
+        self.tf = nn.TransformerDecoder(layer, depth)
+        self.out = nn.Linear(d_model, vocab_size + 2)
+
+    def forward(self, memory, tgt_ids):
+        """Teacher-forced logits. memory (B,1,d); tgt_ids (B,L) encoder-vocab
+        ids. Returns (B, L+1, V+2) predicting [tok_0..tok_{L-1}, EOS] from
+        [BOS, tok_0..tok_{L-1}]."""
+        B, L = tgt_ids.shape
+        inp = torch.cat([torch.full((B, 1), self.bos, dtype=torch.long,
+                                    device=tgt_ids.device), tgt_ids], dim=1)
+        h = self.emb(inp) + self.pos[:, : L + 1]
+        causal = torch.triu(torch.ones(L + 1, L + 1, device=tgt_ids.device,
+                                       dtype=torch.bool), diagonal=1)
+        h = self.tf(h, memory, tgt_mask=causal)
+        return self.out(h)
+
+    @torch.no_grad()
+    def greedy(self, memory, max_steps):
+        """Greedy decode; (B, <=max_steps) ids, EOS-filled after stopping."""
+        B = memory.shape[0]
+        ids = torch.full((B, 1), self.bos, dtype=torch.long,
+                         device=memory.device)
+        done = torch.zeros(B, dtype=torch.bool, device=memory.device)
+        outs = []
+        for _ in range(max_steps):
+            h = self.emb(ids) + self.pos[:, : ids.shape[1]]
+            causal = torch.triu(torch.ones(ids.shape[1], ids.shape[1],
+                                           device=memory.device,
+                                           dtype=torch.bool), diagonal=1)
+            h = self.tf(h, memory, tgt_mask=causal)
+            nxt = self.out(h[:, -1]).argmax(-1)
+            nxt = torch.where(done, torch.full_like(nxt, self.eos), nxt)
+            done = done | (nxt == self.eos)
+            outs.append(nxt)
+            ids = torch.cat([ids, nxt[:, None]], dim=1)
+            if bool(done.all()):
+                break
+        return torch.stack(outs, dim=1)
+
+
 class OperatorLearner(nn.Module):
     """Maps (IC data, symbol) -> trajectory (prediction) and/or operator (discovery).
 
@@ -109,7 +170,7 @@ class OperatorLearner(nn.Module):
     def __init__(self, n_grid, T_out, vocab_size, d_model=128,
                  symbol_kind="grammar", fusion="xattn", n_mech=5,
                  depth=2, max_len=32, n_discovery_mech=8, width_mult=None,
-                 data_hidden_override=None, n_in_steps=1):
+                 data_hidden_override=None, n_in_steps=1, use_ar_decoder=False):
         super().__init__()
         # n_in_steps: how many observed trajectory frames feed the data branch.
         # MUST be > 1 for the discovery head to be identifiable: a single IC
@@ -131,6 +192,12 @@ class OperatorLearner(nn.Module):
             nn.Linear(d_model, T_out))
         self.discovery_mech = nn.Linear(d_model, n_discovery_mech)
         self.discovery_coef = nn.Linear(d_model, n_discovery_mech)
+        # H3: AR decoder over the rep's OWN vocab (token arms only; the
+        # non-token arms keep the multilabel baseline as pre-registered)
+        self.ar_decoder = (ARDecoder(vocab_size, d_model, max_len)
+                           if use_ar_decoder
+                           and symbol_kind not in ("coeff_vector", "none")
+                           else None)
         self.symbol_kind = symbol_kind
 
     def forward(self, ic, sym, sym_mask=None, ablate_symbol=False):
@@ -147,6 +214,15 @@ class OperatorLearner(nn.Module):
         """Recover the operator from DATA alone. Returns (mech_logits, coefs)."""
         d = self.data_enc(ic).mean(1)        # pool grid
         return self.discovery_mech(d), self.discovery_coef(d)
+
+    def discover_ar(self, ic, tgt_ids=None, max_steps=None):
+        """AR discovery (H3): teacher-forced logits when tgt_ids given, else
+        greedy-decoded ids. Conditions ONLY on the data branch."""
+        assert self.ar_decoder is not None
+        memory = self.data_enc(ic).mean(1, keepdim=True)   # (B,1,d)
+        if tgt_ids is not None:
+            return self.ar_decoder(memory, tgt_ids)
+        return self.ar_decoder.greedy(memory, max_steps)
 
     def symbol_embedding(self, sym, sym_mask=None):
         s = self.sym_enc(sym, sym_mask)

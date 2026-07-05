@@ -212,6 +212,7 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
         else 0.5 * (1 + np.cos(np.pi * (s - warm) / max(1, steps - warm))))
     mse, bce = torch.nn.MSELoss(), torch.nn.BCEWithLogitsLoss()
     w_disc = float(tr.get("discovery_weight", 0.5))
+    w_ar = float(tr.get("ar_weight", 0.5))
     patience = int(tr["early_stop_patience"])
     best, bad, ep_done = float("inf"), 0, 0
     for ep in range(epochs):
@@ -225,6 +226,19 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
             mlog, cpred = model.discover(ic)
             loss = (mse(pred, y)
                     + w_disc * (bce(mlog, mech) + mse(cpred, coef)))
+            if model.ar_decoder is not None:
+                # H3: teacher-forced CE over the rep's own token sequence.
+                # labels = [tok_0..tok_{L-1}, EOS at true length, ignore pads]
+                logits = model.discover_ar(ic, tgt_ids=sym)
+                lens = mask.sum(1).long()
+                labels = torch.full((sym.shape[0], sym.shape[1] + 1), -100,
+                                    dtype=torch.long, device=device)
+                labels[:, : sym.shape[1]] = torch.where(
+                    mask > 0.5, sym, torch.full_like(sym, -100))
+                labels[torch.arange(len(lens)), lens] = model.ar_decoder.eos
+                loss = loss + w_ar * torch.nn.functional.cross_entropy(
+                    logits.reshape(-1, logits.shape[-1]), labels.reshape(-1),
+                    ignore_index=-100)
             loss.backward()
             opt.step()
             sched.step()
@@ -272,6 +286,31 @@ def e3_symbol_swap(model, bench, variants, anchor, rep, vocab, max_len, n_in,
     d_prim = np.linalg.norm((pred - y_prim).reshape(len(samples), -1), axis=1)
     d_comp = np.linalg.norm((pred - y_comp).reshape(len(samples), -1), axis=1)
     return float(np.mean(d_comp / (d_comp + d_prim + 1e-12)))
+
+
+@torch.no_grad()
+def ar_exact_match(model, bench, idxs, rep, vocab, max_len, n_in, device):
+    """H3 metric: greedy-decoded token sequence == the operator's canonical
+    encoding, exactly (incl. stopping at the right length). All encoders are
+    injective on the universe, so sequence match == operator match; a
+    non-canonical decode that would parse to the right operator counts as a
+    MISS (strict; noted in the memo)."""
+    from symcomp.encoders import encode_ids
+    model.eval()
+    op = bench.samples[idxs[0]].op
+    ids, m = encode_ids(op, rep, vocab[rep], max_len)
+    true_len = int(m.sum())
+    target = torch.tensor(ids[:true_len])
+    ics = torch.tensor(np.stack([bench.samples[i].traj[:n_in].T for i in idxs]),
+                       dtype=torch.float32).to(device)
+    dec = model.discover_ar(ics, max_steps=true_len + 1).cpu()
+    hits = 0
+    for b in range(dec.shape[0]):
+        seq = dec[b]
+        stop = (seq == model.ar_decoder.eos).nonzero()
+        L = int(stop[0]) if len(stop) else seq.shape[0]
+        hits += int(L == true_len and bool((seq[:L] == target).all()))
+    return hits / dec.shape[0]
 
 
 @torch.no_grad()
@@ -337,6 +376,7 @@ def main():
     mcfg = cfg["model"]
     d_model, max_len = int(mcfg["d_model"]), int(mcfg["max_len"])
     n_in = int(mcfg.get("n_in_steps", 4))
+    use_ar = bool(cfg["train"].get("ar_decoder", False))
     tol = float(cfg["train"]["match_capacity_tol"])
     vsizes = {r: max(len(vocab.get(r, {})), 4) for r in REPS}
 
@@ -344,7 +384,8 @@ def main():
     # PRE-REGISTERED tolerance (a looser gate here would overstate the claim)
     overrides, target, residuals = resolve_hidden_overrides(
         REPS, bench.N, len(bench.t_eval), vsizes, d_model,
-        len(MECHANISMS), max_len, tol=tol, n_in_steps=n_in)
+        len(MECHANISMS), max_len, tol=tol, n_in_steps=n_in,
+        use_ar_decoder=use_ar)
 
     def build(r, seed=0):
         torch.manual_seed(seed)
@@ -352,7 +393,8 @@ def main():
             bench.N, len(bench.t_eval), vsizes[r], d_model=d_model,
             symbol_kind=r, fusion=mcfg["fusion"], n_mech=len(MECHANISMS),
             max_len=max_len, n_discovery_mech=len(ALL_MECHANISMS_DISCOVERY),
-            data_hidden_override=overrides[r], n_in_steps=n_in)
+            data_hidden_override=overrides[r], n_in_steps=n_in,
+            use_ar_decoder=use_ar)
 
     counts, report = assert_matched_capacity({r: build(r) for r in REPS},
                                              tol=tol)
@@ -405,6 +447,13 @@ def main():
             rows.append({**base, "task": "discovery",
                          "commutator": v["commutator"],
                          "metric_name": "coef_mae", "metric_value": mae})
+            if model.ar_decoder is not None:
+                em = ar_exact_match(model, bench, v["idxs"], rep, vocab,
+                                    max_len, n_in, device)
+                rows.append({**base, "task": "discovery",
+                             "commutator": v["commutator"],
+                             "metric_name": "exact_match",
+                             "metric_value": em})
         print(f"  eval {v['label']:44s} [{v['stratum']}|{v['direction']}] "
               f"rel_l2={rel:.4f}", flush=True)
 
