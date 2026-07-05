@@ -647,3 +647,21 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   run_id for dedup).
 - Next if dies: check job 5847283; when drained, aggregate AX, extend
   memo with the exploratory panel, update TODO (AR decoder next).
+
+## 2026-07-05 (late afternoon) — Claude (Alienware) — AR decoder (H3) implemented; AD probe on Euler; user asleep 5h
+
+- OVERNIGHT CONTRACT: push everything, zero overclaims, results as measured.
+- H3 machinery done + pushed: ARDecoder over each rep's own vocab
+  (BOS/EOS internal, conditions on data-branch memory only), teacher-forced
+  CE joint term, strict greedy exact_match rows (sequence == canonical
+  encoding; injective encoders => operator-level match). Capacity matched
+  WITH decoder (5.73M ±1.2%; non-decoder arms widened). Mini dry-runs +
+  registry + smoke green. exact_match=0.0 at mini scale (10 ep/32 ICs) —
+  honest zero, mechanism verified.
+- Euler: Stage AX all 240 cells RUNNING (5847283). AD single-cell probe
+  5847781 submitted (gate before burning 90 cells on an unproven head);
+  probe watcher armed. On probe COMPLETED + nonzero-or-converged AR loss:
+  submit --array=1-89 (SYMCOMP_CONFIG=configs/stageAD.yaml SYMCOMP_STAGE=AD).
+- Next if dies: check 5847283 (aggregate --stage AX) and 5847781 (log:
+  logs/symcomp_A_5847781_0.out; exact_match rows in master.csv stage=AD);
+  then AD array 1-89; aggregate --stage AD task=discovery metric=exact_match.
