@@ -35,9 +35,12 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 # Done inside the runner from a flat index for reproducibility. Durable run
 # dirs + master CSV go under $SYMCOMP_WORK_DIR via symcomp/registry.py; raw
 # data shards are read from scratch (regenerable).
+# SYMCOMP_CONFIG / SYMCOMP_STAGE let the same script drive Stage A (default)
+# and extended sweeps (e.g. AX: sbatch --array=0-239 with SYMCOMP_CONFIG=
+# configs/stageAX.yaml SYMCOMP_STAGE=AX exported at submission)
 python scripts/run_task.py \
-    --config configs/default.yaml \
-    --stage A \
+    --config "${SYMCOMP_CONFIG:-configs/default.yaml}" \
+    --stage "${SYMCOMP_STAGE:-A}" \
     --task_index "$SLURM_ARRAY_TASK_ID" \
     --data_dir "$SCRATCH/symcomp/data" \
     --workdir "$SYMCOMP_WORK_DIR"

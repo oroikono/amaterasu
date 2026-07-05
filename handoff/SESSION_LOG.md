@@ -491,3 +491,127 @@ docstring spec.
 - Next if dies: read design-panel output (workflow w96h8sx2e), implement
   encoders_ext/ arms, configs/stageAX.yaml (append-only reps, max_len 48,
   stage AX), dry-run, submit.
+
+## 2026-07-05 — Stage AX design-panel MERGE (subagent, structured output)
+- Merged 18 proposed arms (3 designers) into final 10 for Stage AX, one per
+  design axis: postfix_rpn (serialization order), digit_p10 (coeff numeral
+  form, bin-then-digitize), slot_vector (positional binding / explicit
+  absence), term_bag_atomic (fused holistic lexicon / bag), fourier_symbol
+  (semantic-spectral), physics_typed_tags (typed metadata),
+  subgrammar_typed_rules (nonterminal refinement), unary_order (morphology),
+  nl_description (natural language), dag_edge_list (edge-set relational).
+- Dropped/absorbed: bottomup_reduce_trace (same axis as postfix_rpn),
+  fourier_symbol_semantic (merged), digit_coeff + digit_coeff_grammar (raw
+  digits confound precision w/ form; reserved as disambiguator variant),
+  dup slot_vector (merged), unary_derivative_order (merged), holistic_id
+  (sandwiched by the already-tied data-only arm + untrained-embedding seed
+  variance), multiview_dual (combination not family; length-confounded;
+  reserve as follow-up if any single arm breaks the null).
+- Numerically verified all token schemes against symcomp/encoders.py
+  conventions (_q bins 0.25..2.0, alphabetical names() order, prefix tree).
+- CRITICAL audit result: designers' fourier arm (2-octave mag bins) is NOT
+  injective on the 25-op Stage A universe — 3 collisions incl. train/test
+  leakage pair (hyperdiffusion:0.2 == diffusion:0.5+hyperdiffusion:0.2).
+  Fixed in merged spec: 1-octave log2 bins (clip 0..16) -> 25/25 unique;
+  build-time injectivity + heldout-vs-train collision assert is mandatory.
+- All 10 arms: <=29 tokens for 3-term (fits current max_len 32 and planned
+  AX 48), finite vocab (9..41), keys collide with nothing in ENCODERS.
+- Next if dies: hand final specs to implementation agents -> one file per
+  arm in symcomp/encoders_ext/, then configs/stageAX.yaml + dry-run.
+- 2026-07-05 14:11 CEST [subagent] Stage AX arm: added symcomp/symcomp/encoders_ext/slot_vector.py (KEY=slot_vector; 5 fixed slots over MECHANISMS order, token c_<_q(coeff)>/c_0). Self-test green: injective on 25-op universe, maxlen 5, vocab 5 (c_0,c_0.25,c_0.5,c_0.75,c_1), spec examples exact, PYTHONHASHSEED 0/7 identical. No other files touched.
+
+## 2026-07-05 12:12Z — dag_edge_list extension arm (subagent)
+- Added symcomp/symcomp/encoders_ext/dag_edge_list.py (KEY='dag_edge_list'):
+  expression DAG as parent-child edge list, term-index edge order fixed
+  (alphabetical mechs); per-term edges ROOT->Tk, Tk->MECH, Tk->COEF(_q bin).
+- Deviation documented: 18 tokens/3-term (no explicit edge-type tokens),
+  not the draft's 27.
+- Self-test green: injective on 5-seed Stage A universe, maxlen 18,
+  vocab 13 (spec est. 16 counted unused coeff bins); spec example matches
+  exactly; identical output under PYTHONHASHSEED=0 vs 7. No other files
+  modified.
+
+- 2026-07-05 14:12 CEST — Stage AX arm `nl_description`: added symcomp/symcomp/encoders_ext/nl_description.py (NL word-token encoder: per-term `<mech> with strength <_q bin>` joined by `plus`). Self-test green: injective on 5-seed universe, maxlen 14 (spec metadata said 16; scheme examples normative, deviation documented in module docstring), vocab 12, PYTHONHASHSEED 0/7 outputs identical. No other files touched.
+
+## 2026-07-05 12:14Z — unary_order extension arm (subagent)
+- Added `symcomp/symcomp/encoders_ext/unary_order.py` (KEY=`unary_order`):
+  per term (alphabetical) `[coef, <_q bin>, 'd' x order, u]`, terms joined
+  by `+`; reaction (order 0) has no `d`. Spec examples match exactly.
+- Deviation documented: actual 3-term worst case is 20 tokens
+  (diffusion+dispersion+hyperdiffusion = 5+6+7 + 2 seps), not the spec's 18;
+  scheme unchanged, still <= 48.
+- Self-test green: injective on 5-seed Stage A universe (25 ops), maxlen 20,
+  vocab 8 (spec est. 11 counted unused coeff bins); identical output under
+  PYTHONHASHSEED=0 vs 7. No other files modified.
+
+## 2026-07-05 14:12 — physics_typed_tags arm (Stage AX, subagent)
+- Added symcomp/encoders_ext/physics_typed_tags.py: typed physics-tag encoder
+  (per term: [class, ord<N>, parity, coef, _q bin]; class in
+  {dissip,disper,conserv,source}; mechanism recoverable from class+order,
+  asserted at import). 5 tokens/term -> 15 for 3-term (spec header said 17;
+  followed the normative examples, deviation documented in module docstring).
+- Self-test green: injective on 25-op universe (5 seeds), maxlen 15, vocab 16;
+  identical output under PYTHONHASHSEED=0 vs 7 (two subprocesses, diff clean).
+
+- 2026-07-05 14:12 CEST — Stage AX arm `term_bag_atomic`: added symcomp/symcomp/encoders_ext/term_bag_atomic.py (fused mechanism@coeff atomic tokens, e.g. ADV@1, bag in names() alphabetical order, shared _q bins). Self-test green: injective on 5-seed universe, maxlen 3, vocab 5 on universe (40 possible; Stage A fixed coeffs collapse it to a mechanism-ID bag, documented in docstring per spec risks); spec examples match exactly; identical output under PYTHONHASHSEED=0 vs 7. No other files touched.
+
+## 2026-07-05 14:13 CEST — Stage AX arm: postfix_rpn (subagent)
+- Added symcomp/symcomp/encoders_ext/postfix_rpn.py (KEY="postfix_rpn"): postfix/RPN
+  minimal pair vs lample_charton. Mechanical post-order of the exact prefix tree —
+  parses enc_lample_charton output via fixed token arities (+,* binary; c,d<n> unary)
+  and emits postorder; per-term [<bin>, c, u, d<order>, *], n-1 '+' at the end.
+- Normative spec examples match token-for-token (1-term and 3-term, 17 tokens).
+- Self-test green: injective on 25-op universe (5 split seeds), maxlen 17, realized
+  vocab 13 (spec's 17 counts all 8 coeff bins; config coeffs hit 4 — same as prefix
+  arm). Identical output under PYTHONHASHSEED=0 vs 7 (two subprocesses, diff clean).
+
+## 2026-07-05 14:12 CEST — digit_p10 extension arm (subagent)
+- Added symcomp/symcomp/encoders_ext/digit_p10.py (KEY="digit_p10"): coefficient-
+  numeral-tokenization axis. Same 8 bins first (_q), then bin token replaced by
+  Charton-style 5-token numeral [+N, 3-digit mantissa of round(bin*100), E-2]
+  inside the enc_lample_charton prefix skeleton. 9 tokens/1-term, 29/3-term.
+- Spec examples matched token-for-token. Self-test green: injective on 25-op
+  universe (5 seeds), maxlen 29, vocab 16 (spec expected 21 counting all ten
+  digits; bins realize only {0,1,2,5,7} — noted in docstring). Deterministic
+  under PYTHONHASHSEED=0 vs 7 (two subprocesses, diff clean). No other files
+  touched.
+
+## 2026-07-05 14:12 CEST — Stage AX arm: subgrammar_typed_rules (subagent)
+Added `symcomp/symcomp/encoders_ext/subgrammar_typed_rules.py` (no other files
+touched): grammar arm with TERM productions typed by mechanism class
+(transport/dissipation/dispersion/source), 4 tokens/term, same alphabetical
+term order + additive spine as `enc_grammar`. Self-test on the 5-seed Stage A
+universe: injective, maxlen 12, vocab 15 (matches spec); normative example
+exact; output identical under PYTHONHASHSEED=0 vs 7. Documented deviation:
+spec's "~9 tokens 3-term" estimate superseded by its own example -> 12.
+
+## 2026-07-05 (Claude subagent, Stage AX arm: fourier_symbol)
+Added symcomp/symcomp/encoders_ext/fourier_symbol.py (no other code touched):
+semantic-ceiling arm tokenizing sign + 1-octave log2-magnitude bins of the
+_q-binned operator's L_hat(xi) at xi in {1,2,4,8}, 5 tokens/xi = fixed 20
+tokens/op. Self-test on the 5-seed Stage A universe (25 ops): injective,
+maxlen 20, realized vocab 21 (design vocab 41 incl. unused bins); output
+identical under PYTHONHASHSEED=0 vs 7; smoke.py OK with arm auto-registered.
+Interpretation note (documented in module docstring): spec's sign+magnitude
+"followed by" realized as ONE fused token (pm<b>/nm<b>) -- the only reading
+consistent with the spec's own 20-token / 41-vocab arithmetic.
+
+## 2026-07-05 14:16 CEST — digit_p10 arm ADVERSARIALLY VERIFIED (subagent)
+- Re-ran all checks independently: both normative spec examples reproduced
+  token-for-token (9 / 29 tokens); injective on the 25-op 5-seed universe
+  (0 collisions), maxlen 29 <= 48, finite vocab 16; byte-identical output
+  under PYTHONHASHSEED=0 vs 7 subprocesses; code is pure (only _q +
+  operators imports, no IO/randomness/global mutation).
+- Vocab 16 vs spec expected 21 judged a justified, docstring-documented
+  expectation gap (bins realize digits {0,1,2,5,7} only), not a scheme
+  deviation. Verdict: OK.
+
+## 2026-07-05 — verifier subagent: subgrammar_typed_rules arm PASSED
+- Adversarially verified symcomp/symcomp/encoders_ext/subgrammar_typed_rules.py:
+  spec examples exact (1-term and 3-term, 12 tokens), injective on the 25-op
+  5-seed Stage A universe, maxlen 12, vocab 15, PYTHONHASHSEED 0/7 diff clean,
+  pure code, append-only SESSION_LOG, no tracked files modified.
+- Minor (shared infra, all ext arms): importing an encoders_ext module
+  directly BEFORE symcomp.encoders skips its ENCODERS registration silently
+  (circular-import partial module in _load_extension_encoders). Pipeline
+  imports encoders first, so no Stage AX impact.
