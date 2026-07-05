@@ -296,3 +296,25 @@ docstring spec.
      `bash cluster/euler_bootstrap.sh` on a login node from symcomp/.
   3. Copy the local master.csv somewhere durable if the sweep finished
      (scratchpad is /tmp — survives reboot only until tmp cleanup!).
+
+## 2026-07-05 03:45 CEST — Claude (Alienware) — EULER ACCESS LIVE; bootstrap running on eu-login-32
+
+- User created an SSH ControlMaster (after clearing a stale socket);
+  4h window (ControlPersist=4h from ~03:30). All Euler ops go through
+  `ssh -S ~/.ssh/euler-cm.sock euler`.
+- Storage identified: **/cluster/work/math/ooikonomou** (group
+  MATH-EULER-ooikonomou, group-writable; Lustre euesfs3, 65T free).
+  SYMCOMP_WORK_DIR=/cluster/work/math/ooikonomou/symcomp.
+- Repo rsynced (GitHub auth not needed) to euler:~/code/amaterasu at
+  `554330d`, external/ excluded.
+- `cluster/euler_bootstrap.sh` launched detached (~/symcomp_bootstrap.log):
+  venv on work storage → physics/solvers/registry tests **incl. the flock
+  probe ON LUSTRE** (decisive for master.csv locking) → data array →
+  Stage A array gated afterok. Monitor armed on the log.
+- Local sweep: 5/90 done (~5 min/cell, ETA ~10:45 CEST), first 6-arm block
+  nearly complete.
+- Next if session dies: `ssh -S ~/.ssh/euler-cm.sock euler 'tail
+  ~/symcomp_bootstrap.log; squeue --me'` — if jobs queued, just wait;
+  results land in /cluster/work/math/ooikonomou/symcomp/results/master.csv.
+  Socket dies ~07:30 — user must re-run the ControlMaster command or
+  authorize the WSL key (still the better fix).
