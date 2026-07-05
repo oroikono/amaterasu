@@ -421,3 +421,26 @@ docstring spec.
   headline; AR decoder for H3; E2/E3 at scale; prior-art re-check before
   write-up. Euler access: user should still add the key (socket needs
   password each time); everything else is one `sbatch` away.
+
+## 2026-07-05 (midday) — Claude (Alienware) — E2/E3 interventions launched at scale (job 5818788)
+
+- User go-ahead. run_task.py now also emits per compose variant
+  `rel_l2_masked` (E2: symbol channel ablated at eval — leverage =
+  masked − unmasked answers "did the model USE the symbols", making the
+  H1 null non-vacuous) and per cell `e3_symbol_causal`
+  (task=intervention: anchor data + PURE-advection symbol; 1 = symbol
+  steers the prediction, 0 = data-driven). Checkpoints (model.pt) now
+  saved per run for post-hoc work. Dry-run green (E3=0.33 at mini scale).
+- Euler: synced, full 90-cell array resubmitted as **5818788** (retrains
+  identical seeds; aggregate dedup keeps latest run per group, so the
+  fresh rows also refresh H1/H2 — expect minor CI wiggle, direction
+  should hold). Watcher armed.
+- Conceptual note for the memo (user question "what did symbols give
+  us?"): symbols provided the generator's COEFFICIENTS (numbers help:
+  coeff_vector best), syntax was inert (H4 tie), and no symbol encodes
+  the BCH flow correction (H2 law). The user's original hope — "know the
+  data comes from a law, so compose/decompose" — is partially delivered
+  (zero-shot composition DOES work, rel_l2≈0.25-0.30) and its sharpest
+  remaining test is H3/discovery via the AR decoder (open).
+- Next if dies: when 5818788 drains → aggregate incl. E2 leverage + E3;
+  update memo; then Stage B / AR decoder.
