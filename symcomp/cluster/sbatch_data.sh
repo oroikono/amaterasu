@@ -30,6 +30,7 @@ export PYTHONPATH="$PWD"
 python scripts/gen_data.py \
     --config configs/default.yaml \
     --shard_index "$SLURM_ARRAY_TASK_ID" \
+    --n_shards "${SLURM_ARRAY_TASK_COUNT:-50}" \
     --outdir "$SCRATCH/symcomp/data"
 
 echo "data shard $SLURM_ARRAY_TASK_ID done"

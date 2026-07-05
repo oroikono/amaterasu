@@ -85,6 +85,32 @@ scratch, so the 15-day purge cannot kill the software mid-project. (e) Small
 artifacts are copied to the home archive at end of job (atomic rename) as a
 second copy on backed-up storage.
 
+### D12 — S2 profiles must be well-posed: nu amplitude is RELATIVE (2026-07-05)
+**Why:** the original absolute convention (`nu(x) = nu0 + eps*cos`) makes
+nu(x) negative for eps > nu0 -> locally backward heat -> ill-posed; verified
+blow-up max|u| ~ 1e204 at eps=0.8. The S2 stratum (the H2 commutator sweep!)
+would have been garbage above eps≈0.5. Now `nu(x) = nu0*(1 + eps*cos)`,
+min = nu0*(1-eps) > 0 for eps < 1; solutions bounded across the sweep and the
+commutator knob stays strictly monotone (0 -> 1.36e6 at N=256). Also: explicit
+RK4 needs `stable_n_sub` at production N=256 (~5349 substeps, not the toy
+default 2000). Validated in tests/test_solvers.py.
+
+### D13 — Model input = first 4 observed trajectory frames (n_in_steps), and
+### decompose-first split design (2026-07-05)
+**Why (input):** the discovery head reads the data branch; an IC-only input
+is operator-independent, so discovery from it is structurally at chance and
+its loss term was dead weight biasing arms asymmetrically. All arms now see
+the first `model.n_in_steps=4` OBSERVED frames (prediction = "4 frames +
+symbol -> full trajectory"). Uniform across arms; symbol leverage is still
+measured by E2 masking.
+**Why (split):** the previous decompose construction removed singletons that
+held-out composites needed, violating the pre-registered "primitives trained
+individually" premise in ALL 5 seeds. make_split now picks ONE decompose-held
+primitive first (never the protected S2-anchor mechanisms), draws compose
+held-outs only from composites avoiding it, and the leakage assert requires
+each compose primitive's singleton in train. The anchor composite is always
+forced into test_compose by run_task (S2 rows are zero-shot in every seed).
+
 ## Open questions
 1. **Which group work/project path and quota** on Euler? (`/cluster/work/<group>`)
    — needed to finalize storage wiring. Confirm with `lquota`.

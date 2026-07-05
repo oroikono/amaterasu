@@ -44,10 +44,15 @@
    the current cluster default (placeholders in `cluster/*.sh`). Pin requirements.
 3. **Run physics validation on the cluster:** `python tests/test_physics.py` must
    print the machine-zero commuting identity and the monotone commutator.
-4. **Implement `scripts/gen_data.py`** per its docstring spec; launch the data
-   array job; sanity-check a few trajectories; confirm leakage hygiene passes.
-5. **Implement `scripts/run_task.py`** per its docstring spec; dry-run 1 seed for
-   all 6 reps; assert matched param counts; confirm CSV schema + logging.
+4. ~~Implement `scripts/gen_data.py`~~ DONE 2026-07-05 (+ batched solvers,
+   well-posed S2 per D12, solver validation tests). Cluster launch pending.
+5. ~~Implement `scripts/run_task.py`~~ DONE 2026-07-05 (both heads, capacity
+   asserted at 2%, D13 input/split fixes, registry rows). Dry-runs green on
+   local cuda (mini + production config). Cluster dry-run pending.
+5b. **Launch on Euler:** `bash cluster/euler_bootstrap.sh` from the symcomp/
+   root on a login node does EVERYTHING (storage probe → venv on work →
+   cluster tests incl. flock probe → data array → Stage A array gated on it).
+   Blocked only on SSH/login access (Claude's WSL key not authorized yet).
 
 ## Later actions
 6. **Launch full Stage A** (90 tasks) once the dry-run is green; aggregate to the
