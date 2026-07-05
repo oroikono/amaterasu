@@ -240,6 +240,37 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
 
 
 @torch.no_grad()
+def e3_symbol_swap(model, bench, variants, anchor, rep, vocab, max_len, n_in,
+                   cfg, device):
+    """Counterfactual swap on the anchor's S1 eval samples (see caller)."""
+    from symcomp.encoders import enc_coeff_vector, encode_ids
+    from symcomp.solver import solve_constcoeff_batch
+    v = next((v for v in variants if v["stratum"] == "S1"
+              and v["op"].canonical_str() == anchor.canonical_str()), None)
+    if v is None:
+        return None
+    samples = [bench.samples[i] for i in v["idxs"]]
+    pure = Operator({"advection": anchor.coeffs["advection"]})
+    U0 = np.stack([s.u0 for s in samples])
+    y_prim = solve_constcoeff_batch(pure, U0, bench.t_eval, bench.N, bench.Ldom)
+    y_comp = np.stack([s.traj for s in samples])
+    ic = torch.tensor(np.stack([s.traj[:n_in].T for s in samples]),
+                      dtype=torch.float32, device=device)
+    if rep == "coeff_vector":
+        sym = torch.tensor(np.stack([enc_coeff_vector(pure)] * len(samples)),
+                           device=device)
+        mask = None
+    else:
+        ids, m = encode_ids(pure, rep, vocab[rep], max_len)
+        sym = torch.tensor(np.stack([ids] * len(samples)), device=device)
+        mask = torch.tensor(np.stack([m] * len(samples)), device=device)
+    pred = model(ic, sym, mask).cpu().numpy()
+    d_prim = np.linalg.norm((pred - y_prim).reshape(len(samples), -1), axis=1)
+    d_comp = np.linalg.norm((pred - y_comp).reshape(len(samples), -1), axis=1)
+    return float(np.mean(d_comp / (d_comp + d_prim + 1e-12)))
+
+
+@torch.no_grad()
 def discovery_metrics(model, bench, idxs, device, n_in):
     """Baseline-head discovery metrics for one variant's eval samples.
 
@@ -353,6 +384,15 @@ def main():
         rows.append({**base, "task": "prediction", "commutator": v["commutator"],
                      "metric_name": metric, "metric_value": rel})
         if v["direction"] == "compose":
+            # E2 (channel masking): same eval with the symbol channel ablated.
+            # leverage = rel_l2_masked - rel_l2 quantifies how much the model
+            # actually RELIES on symbols (makes the H1 null non-vacuous).
+            evm = evaluate(model, bench, v["idxs"], rep, vocab, max_len,
+                           device=device, n_in=n_in, ablate_symbol=True)
+            rows.append({**base, "task": "prediction",
+                         "commutator": v["commutator"],
+                         "metric_name": "rel_l2_masked",
+                         "metric_value": float(np.mean([r["rel_l2"] for r in evm]))})
             f1, mae = discovery_metrics(model, bench, v["idxs"], device, n_in)
             rows.append({**base, "task": "discovery",
                          "commutator": v["commutator"],
@@ -362,6 +402,18 @@ def main():
                          "metric_name": "coef_mae", "metric_value": mae})
         print(f"  eval {v['label']:44s} [{v['stratum']}|{v['direction']}] "
               f"rel_l2={rel:.4f}", flush=True)
+
+    # E3 (counterfactual symbol swap) on the anchor composite: observed frames
+    # say advection+diffusion, the symbol claims PURE advection. Fraction of
+    # the prediction's movement toward the pure solution = symbol causality
+    # (1 = symbol fully steers the output, 0 = model follows the data only).
+    if rep != "none":
+        e3 = e3_symbol_swap(model, bench, variants, anchor, rep, vocab,
+                            max_len, n_in, cfg, device)
+        if e3 is not None:
+            rows.append({**base, "task": "intervention", "commutator": 0.0,
+                         "metric_name": "e3_symbol_causal", "metric_value": e3})
+            print(f"  E3 symbol-causal fraction = {e3:.3f}", flush=True)
     run.append_rows(rows)
 
     # per-run extras: variant table + timing (not in the fixed schema)
@@ -372,6 +424,9 @@ def main():
     with open(os.path.join(run.dir, "training.json"), "w") as f:
         json.dump({"epochs_run": epochs_run, "final_train_loss": final_loss,
                    "wall_seconds": time.time() - t_start}, f, indent=2)
+    # checkpoint for post-hoc interventions (stays on work storage; the home
+    # archive skips .pt by design)
+    torch.save(model.state_dict(), os.path.join(run.dir, "model.pt"))
     run.archive_to_home()
     print(f"wrote {len(rows)} rows for run {run.run_id} "
           f"({time.time()-t_start:.0f}s total)", flush=True)
