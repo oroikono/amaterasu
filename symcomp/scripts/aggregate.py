@@ -129,6 +129,34 @@ def commutator_regression(rows, encoder, metric="rel_l2", task="prediction"):
             "R2": float(r2), "spearman": float(rho), "n": len(xs)}
 
 
+def h2_stratified(rows, encoder, metric="rel_l2", task="prediction"):
+    """H2 on the PRE-REGISTERED test set: the anchor epsilon sweep only
+    (rows with commutator > 0, i.e. the S2 variants of one fixed composite).
+
+    The pooled regression above confounds operator difficulty with the
+    commutator: its commutator=0 rows include hard S1 composites while all
+    commutator>0 rows are the easy anchor family, which can mask or even
+    flip the true within-sweep trend. Here difficulty is held fixed by
+    construction. Returns spearman rho + the mean per-cell error delta
+    between the largest and smallest commutator (positive = degrades).
+    """
+    per = defaultdict(dict)
+    xs, ys = [], []
+    for r in rows:
+        if r.get("encoder") == encoder and r.get("task") == task and \
+           r.get("metric_name") == metric and r["commutator"] > 0:
+            xs.append(r["commutator"]); ys.append(r["metric_value"])
+            per[(r.get("split_seed"), r.get("init_seed"))][
+                round(r["commutator"])] = r["metric_value"]
+    if len(xs) < 3:
+        return None
+    rx = np.argsort(np.argsort(xs)); ry = np.argsort(np.argsort(ys))
+    rho = float(np.corrcoef(rx, ry)[0, 1])
+    deltas = [v[max(v)] - v[min(v)] for v in per.values() if len(v) >= 2]
+    return {"spearman": rho, "mean_delta_max_min": float(np.mean(deltas)),
+            "n": len(xs), "n_cells": len(deltas)}
+
+
 def money_plot(rows, metric="rel_l2", task="prediction", out="results/money_plot.png"):
     try:
         import matplotlib; matplotlib.use("Agg")
@@ -169,10 +197,17 @@ if __name__ == "__main__":
     for e, (m, lo, hi, p) in tab.items():
         star = "*" if (lo > 0 or hi < 0) else " "
         print(f"  {ref} vs {e:18s}: {m:+.4f}  CI[{lo:+.4f},{hi:+.4f}]  p={p:.3f} {star}")
-    print("\nH2: commutator regression per rep:")
+    print("\nH2 (pooled -- CAUTION: stratum-confounded, see h2_stratified):")
     for enc in sorted({r['encoder'] for r in rows}):
         reg = commutator_regression(rows, enc, a.metric, a.task)
         if reg:
             print(f"  {enc:18s}: slope={reg['slope']:+.3f} R2={reg['R2']:.3f} "
                   f"rho={reg['spearman']:+.3f} n={reg['n']}")
+    print("\nH2 STRATIFIED (pre-registered anchor sweep, difficulty held fixed):")
+    for enc in sorted({r['encoder'] for r in rows}):
+        st = h2_stratified(rows, enc, a.metric, a.task)
+        if st:
+            print(f"  {enc:18s}: rho={st['spearman']:+.3f} "
+                  f"delta(err@max-min ||[A,B]||)={st['mean_delta_max_min']:+.4f} "
+                  f"n={st['n']} cells={st['n_cells']}")
     money_plot(rows, a.metric, a.task)
