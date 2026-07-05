@@ -318,3 +318,20 @@ docstring spec.
   results land in /cluster/work/math/ooikonomou/symcomp/results/master.csv.
   Socket dies ~07:30 — user must re-run the ControlMaster command or
   authorize the WSL key (still the better fix).
+
+## 2026-07-05 03:58 CEST — Claude (Alienware) — EULER PIPELINE LIVE: all cluster tests green, arrays queued
+
+- Bootstrap completed on eu-login-32: venv on work storage (torch
+  2.12.1+cu130), **PHYSICS OK / SOLVERS OK / REGISTRY OK on the cluster —
+  including the 8-process flock probe ON LUSTRE (concurrent master.csv
+  locking is coherent on /cluster/work/math)**.
+- Jobs: data array **5746065** (29 entries, RUNNING across eu-a2p nodes),
+  Stage A array **5746066** (90 GPU cells, PENDING afterok:5746065).
+- Results will land in /cluster/work/math/ooikonomou/symcomp/results/
+  master.csv (+ per-run dirs; home archive at ~/symcomp_archive on Euler).
+- Watcher armed: queue-state changes + master.csv row count, every 5 min.
+- Local sweep continues in parallel (same code/config — a free
+  cross-hardware replication of Stage A).
+- Next if session dies: `squeue --me` on Euler; when 5746066 drains,
+  aggregate per README step 5. If SSH fails: socket expired (~07:30),
+  re-run ControlMaster or add the WSL key.
