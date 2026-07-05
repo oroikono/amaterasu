@@ -136,6 +136,31 @@ def enc_grammar_scrambled(op: Operator) -> list[str]:
 ENCODERS["grammar_scrambled"] = enc_grammar_scrambled
 
 
+# ---- extension arms (exploratory, Stage AX) --------------------------------
+# Each module in symcomp/encoders_ext/ defines KEY (str) and encode(op) ->
+# list[str] and is auto-registered here. Contract: pure deterministic function
+# of the Operator (PYTHONHASHSEED-stable), finite vocab, <= 48 tokens for a
+# 3-term operator. One file per arm so parallel authors cannot conflict.
+def _load_extension_encoders():
+    import importlib
+    import pkgutil
+    try:
+        from . import encoders_ext
+    except ImportError:
+        return
+    for m in pkgutil.iter_modules(encoders_ext.__path__):
+        mod = importlib.import_module(f".encoders_ext.{m.name}", __package__)
+        key, fn = getattr(mod, "KEY", None), getattr(mod, "encode", None)
+        if not key or not callable(fn):
+            continue
+        if key in ENCODERS:
+            raise ValueError(f"extension encoder key collision: {key}")
+        ENCODERS[key] = fn
+
+
+_load_extension_encoders()
+
+
 def build_vocab(ops: Iterable[Operator]) -> dict[str, dict[str, int]]:
     """Build a per-encoder token->id vocab over the corpus (symbolic encoders)."""
     vocabs: dict[str, dict[str, int]] = {}

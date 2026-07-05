@@ -444,3 +444,50 @@ docstring spec.
   remaining test is H3/discovery via the AR decoder (open).
 - Next if dies: when 5818788 drains → aggregate incl. E2 leverage + E3;
   update memo; then Stage B / AR decoder.
+
+## 2026-07-05 13:56 CEST — subagent: exploratory encoding-arm proposals
+- Task: propose 4-6 NEW symbolic encoding arms for the exploratory sweep
+  testing the generality of the all-arms-tied null (symbolic-math-in-ML lens).
+- Read encoders.py/operators.py; matched conventions (sorted names(), 8-bin
+  _q quantization, per-encoder vocab + <pad>).
+- Proposed 6 arms via StructuredOutput to orchestrator: postfix_rpn
+  (serialization order), digit_p10 (numeral tokenization, bin-then-digitize),
+  slot_vector (positional vs token binding), fourier_symbol_semantic
+  (syntax vs semantics; tokenized multiplier samples), unary_order
+  (Peano-style shared dx sub-tokens), multiview_dual (prefix + slot views).
+  All meet contract: deterministic, finite vocab, <=48 tokens for 3-term,
+  ~40 lines numpy each.
+- Next if dies: orchestrator holds the arm specs; re-run proposal subagent
+  or lift specs from this entry into symcomp/encoders.py additions.
+
+## 2026-07-05 — PL/grammar-lens subagent: Stage AX arm proposals
+- Proposed 6 exploratory encoder arms (returned via structured output to the
+  orchestrator, for symcomp/symcomp/encoders_ext/): subgrammar_typed_rules,
+  bottomup_reduce_trace, term_bag_atomic, dag_edge_list,
+  unary_derivative_order, digit_coeff_grammar. Each isolates one design axis
+  (rule-vs-terminal locus, derivation direction, token granularity, graph
+  serialization, primitive decomposability, coefficient tokenization).
+- No code changed; read-only analysis of encoders.py/operators.py/config.
+- Next if dies: orchestrator holds the arm specs; implement one file per arm
+  under encoders_ext/ per the module contract.
+
+## 2026-07-05 — Claude (Alienware) — E2/E3 AT SCALE: null is STRONG-FORM; Stage A fully replicated
+
+- Array 5818788 drained (fresh retrain of all 90 cells + interventions).
+- **E2 (masking): symbols ARE used** — leverage +0.063…+0.069 rel_l2,
+  positive in 100% of variant-cells for every symbolic arm; data-only arm
+  exactly 0.000 (ablation no-op sanity ✓).
+- **E3 (counterfactual swap): symbols are causally live** — wrong symbol
+  pulls predictions ~27–32% toward the wrong solution (coeff_vector 0.27,
+  token arms ~0.32).
+- **Replication:** independent retrain reproduced H1 (coeff_vector −0.037
+  CI[−0.040,−0.033]; scrambled/prose ties), H2 stratified (rho +0.48…+0.72),
+  H4 tie. Stage A conclusions now rest on two complete training rounds.
+- Frozen: results_stageA/master_with_interventions.csv. Memo updated with
+  the strong-form statement: models consume symbols and are steered by
+  them; the FORM is irrelevant; no form escapes the commutator law.
+- In flight: Stage AX design panel (3 lenses done incl. PL-lens entry
+  above; merge pending) → implementation agents → ~180-cell AX array.
+- Next if dies: read design-panel output (workflow w96h8sx2e), implement
+  encoders_ext/ arms, configs/stageAX.yaml (append-only reps, max_len 48,
+  stage AX), dry-run, submit.

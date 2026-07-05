@@ -49,15 +49,19 @@ from symcomp.operators import Operator
 from symcomp.splits import make_split, _assert_no_leakage
 from symcomp.train import OpDataset, evaluate
 
-REPS = ["grammar", "grammar_scrambled", "prose_tree", "lample_charton",
-        "coeff_vector", "none"]
 SPLIT_SEEDS = [0, 1, 2, 3, 4]
 INIT_SEEDS = [0, 1, 2]
-GRID = list(itertools.product(REPS, SPLIT_SEEDS, INIT_SEEDS))  # 90 cells
 
 
-def resolve_cell(idx):
-    return GRID[idx]
+def build_grid(reps):
+    """Flat index -> (rep, split_seed, init_seed), rep-major.
+
+    reps comes from config model.reps. APPEND-ONLY discipline: new arms go at
+    the END of the list so existing task indices keep their meaning within a
+    stage (Stage A = the first 6 reps = indices 0-89; Stage AX extensions
+    start at 90).
+    """
+    return list(itertools.product(reps, SPLIT_SEEDS, INIT_SEEDS))
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +317,8 @@ def main():
 
     with open(a.config) as f:
         cfg = yaml.safe_load(f)
-    rep, split_seed, init_seed = resolve_cell(a.task_index)
+    REPS = list(cfg["model"]["reps"])
+    rep, split_seed, init_seed = build_grid(REPS)[a.task_index]
     cell = {"rep": rep, "split_seed": split_seed, "init_seed": init_seed,
             "stage": a.stage, "task_index": a.task_index}
     print("RESOLVED CELL:", json.dumps(cell), flush=True)

@@ -63,13 +63,38 @@ autoregressive decoder is unimplemented; the rep-agnostic baseline head
 0.29–0.33 (vs compose ≈ 0.25–0.30), one held-out primitive per seed; the
 nu→0 singular-limit test is Stage C. No decision taken.
 
+## E2/E3 interventions (added 2026-07-05; independent full retrain)
+
+The null is **strong-form, not vacuous** — the models demonstrably use the
+symbol channel:
+
+- **E2 (channel masking):** ablating symbols at eval costs +0.063–0.069
+  rel_l2, positive in **100% of variant-cells** for every symbolic arm
+  (data-only arm exactly 0.000 — ablation no-op sanity check). The symbol
+  channel carries roughly as much error-reduction as the entire commutator
+  degradation range.
+- **E3 (counterfactual swap):** feeding the anchor's data with a PURE-
+  advection symbol pulls predictions 27–32% of the way toward the wrong
+  (pure) solution — the channel is causally steering, in every arm.
+- **Replication:** this rerun independently retrained all 90 cells; H1, H2
+  (stratified), and H4 reproduced within CI wiggle. Stage A conclusions
+  rest on two complete training rounds.
+
+One-sentence synthesis: *models consume the symbols and are steered by
+them; the symbolic FORM is irrelevant (down to scrambled syntax); and no
+form escapes the commutator law.* Symbols are, in effect, a lookup of the
+generator's coefficients — which is why the minimal coefficient vector is
+the best (and cheapest) conditioning channel.
+
 ## Caveats
 - Single fusion (xattn) + backbone (transformer); Stage B robustness sweep
   pending — H1's negative should be confirmed across fusion/backbone/scale
   before it is called final.
-- E2 (channel masking) / E3 (counterfactual swap) interventions exist in
-  `symcomp/experiments.py` but were not run in the Stage A cells; they
-  would sharpen the "symbol channel contributes little" reading.
+- An exploratory extended representation sweep (Stage AX, ~10 additional
+  symbolic encodings incl. subgrammar factorizations, spectral-symbol
+  tokens, digit coefficients, order-free bags) is in preparation — NOT
+  pre-registered; will be reported separately as a generality test of the
+  null.
 - Discovery baseline only (see H3). 5 split-seeds → sign-test floor 0.06.
 - The 18-cell local (Alienware) partial replication was discarded (mixed
   split-code versions); Euler is the sole source of truth for Stage A.
