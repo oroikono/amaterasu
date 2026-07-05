@@ -335,3 +335,33 @@ docstring spec.
 - Next if session dies: `squeue --me` on Euler; when 5746066 drains,
   aggregate per README step 5. If SSH fails: socket expired (~07:30),
   re-run ControlMaster or add the WSL key.
+
+## 2026-07-05 04:50 CEST — Claude (Alienware) — laptop closing; Euler autonomous; state snapshot
+
+- **Euler Stage A 5746066: last seen 34 RUNNING / ~55 cells done /
+  1271 rows in master.csv (04:30ish). Cluster jobs are laptop-independent
+  and will complete on their own.** Results: /cluster/work/math/ooikonomou/
+  symcomp/results/master.csv + runs/ + Euler-side ~/symcomp_archive.
+- Local replication sweep DIED when /tmp was wiped (earlier process exit):
+  18 production cells preserved in ~/symcomp_archive/runs (design worked —
+  archive_to_home per cell). /tmp shards/registry lost (regenerable in ~3
+  min via gen_data). Not blocking: Euler is the canonical run.
+- Euler key STILL not authorized (user's paste went to a local shell;
+  Claude's self-append was permission-blocked as unauthorized persistence —
+  correct call). Socket dies on laptop close.
+- **WAKE-UP CHECKLIST:**
+  1. Connect ETH VPN. Re-establish access: EITHER on Euler (password login)
+     `echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKDgYUSwj7P4NK9sWeAXhIsZd6qv2qjzLFaYl+LCVAzL oroikon@gmail.com' >> ~/.ssh/authorized_keys`
+     OR locally: `rm -f ~/.ssh/euler-cm.sock && ssh -fN -M -S ~/.ssh/euler-cm.sock -o ControlPersist=12h euler`
+  2. Check: `ssh euler 'sacct -j 5746066 --format=JobID,State -n | sort | uniq -c'`
+     and `wc -l /cluster/work/math/ooikonomou/symcomp/results/master.csv`
+     (expect ~2250 rows for 90 cells; requeues fine — aggregate dedups).
+  3. Aggregate ON Euler: cd ~/code/amaterasu/symcomp && source
+     /cluster/work/math/ooikonomou/symcomp/venvs/symcomp/bin/activate &&
+     PYTHONPATH=. python scripts/aggregate.py --csv /cluster/work/math/
+     ooikonomou/symcomp/results/master.csv --task prediction --metric rel_l2
+     (repeat --task discovery --metric mech_f1; money plot lands in
+     results/money_plot.png).
+  4. Optionally rerun the local replication (bootstrap-free): regen data
+     3 min, then the driver loop — see git history for drive_stageA.sh, or
+     just trust Euler.
