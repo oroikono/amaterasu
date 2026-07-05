@@ -221,3 +221,48 @@ docstring spec.
   2000 — default would have blown up) + tests/test_solvers.py [6 checks,
   all green]. This closes the ETDRK4 test-gap TODO.
 - physics + solvers green. Next: gen_data.py.
+
+## 2026-07-04 20:55 CEST — Claude (Alienware) — gen_data + run_task IMPLEMENTED, dry-runs green, pushed 80a4589
+
+- `symcomp/shards.py` (shard IO), `gen_data.py` (full impl: 29-entry
+  universe = 25 S1 ops ∪ 4 S2 eps-variants; finite-check before write) and
+  `run_task.py` (full Stage A cell: anchor forced held-out, IC-hygiene
+  slices, capacity asserted across all 6 arms at 3.6M params ±1.6%, joint
+  two-head training, per-variant eval rows → registry) all working.
+- Dry-runs on cuda (grammar cell 0, coeff_vector cell 75, mini config):
+  ~8s/cell, 35 rows each, S2 rel_l2 now meaningful (≈0.46-0.49, previously
+  saturated at 1.000 due to the ill-posedness bug). Fixed duplicate
+  decompose primitives (double-weighting).
+- Euler SSH STILL DENIED (user hasn't added the key). Pushed 80a4589.
+- Running now: production-config (N=256, 320 ICs) data gen locally for real
+  timing + a full production cell for the GPU-hour estimate; background
+  science-integrity review of the two new scripts.
+- Next if session dies: check review findings + prod timings; retry
+  `ssh euler`; on success → README cluster workflow steps 0-5.
+
+## 2026-07-05 03:15 CEST — Claude (Alienware) — 6 review findings fixed (2 critical); tests green
+
+- Science-integrity review returned 6 verified findings; all fixed:
+  1. **[CRITICAL] Discovery head saw only the IC** (operator-independent →
+     metrics structurally at chance, dead loss term). Fix: `n_in_steps: 4`
+     observed trajectory frames now feed the data branch (model/train/
+     capacity/run_task threaded; config documents it). Note: prediction task
+     is now "4 observed frames + symbol → full trajectory".
+  2. **[CRITICAL] Split premise violated in all 5 seeds** (decompose-held
+     singletons overlapped compose-test primitives, incl. the anchor's).
+     Fix: make_split picks ONE decompose primitive FIRST (never protected
+     {advection,diffusion}), draws compose held-outs only from composites
+     avoiding it; leakage assert #2 strengthened to singleton-in-train.
+     Verified: premise holds seeds 0-4, decompose non-empty everywhere,
+     universe unchanged (29 entries — existing shards stay valid).
+  3. aggregate.py dedups requeued-task rows (latest run_id wins).
+  4. run_task refuses partial/stale data dirs (manifest completeness).
+  5. run_task asserts shard sidecar matches config (IC-hygiene guard).
+  6. Capacity gate now exactly the pre-registered 2% (passes: max +1.6%).
+- Concurrent edits appeared in model.py/train.py implementing the same
+  n_in_steps fix (user or another agent) — merged cleanly, not reverted.
+- **Perf**: 6.9h production cell was DataLoader overhead (GPU step = 43ms,
+  total GPU compute ≈ 3 min!). Fixed: dataset precomputed into tensors.
+- All tests green (physics, solvers, registry, smoke) + mini cell green.
+- Production cell 0 re-running locally for the real timing.
+- Next if dies: check prod_cell0.log timing; commit+push; ssh euler retry.

@@ -67,9 +67,12 @@ def build_split(cfg, split_seed):
     sp = cfg["split"]
     mechs = list(cfg["mechanisms"]["linear"])
     coeffs = {m: float(cfg["coeffs"][m]) for m in mechs}
+    # anchor primitives are protected: their singletons must stay in train so
+    # the forced-heldout anchor still satisfies the compose premise
     man = make_split(mechs, coeffs, split_seed, held_frac=sp["held_frac"],
                      max_terms=sp["max_terms"],
-                     triples_sample=sp["triples_sample"])
+                     triples_sample=sp["triples_sample"],
+                     protect=frozenset({"advection", "diffusion"}))
     # make_split can hold the same primitive out of two composites -> dedup so
     # no operator is double-weighted in the decompose aggregation
     seen: set = set()
@@ -92,15 +95,38 @@ def load_benchmark(cfg, man, anchor, data_dir):
     """Assemble a Benchmark from shards. Returns (bench, variants) where
     variants = [{label, stratum, commutator, direction, idxs}] for eval."""
     d = cfg["data"]
-    n_tr = int(d["n_ic_train"])
+    n_tr, n_te = int(d["n_ic_train"]), int(d["n_ic_test"])
     noise = float(d["noise_levels"][0])   # Stage A trains/evals at clean data
     mani = shards.load_manifest(data_dir)
     t_eval = np.linspace(0.0, float(d["t_max"]), int(d["T"]))
 
+    # completeness: refuse to run against a partial/stale data dir, otherwise
+    # cells silently evaluate different variant sets and stop being comparable
+    need = {o.canonical_str() for o in
+            man.train + man.test_compose + man.test_decompose}
+    need |= {f"{anchor.canonical_str()}@eps{float(e):g}"
+             for e in d["epsilons"] if float(e) > 0}
+    missing = need - set(mani)
+    assert not missing, f"data_dir manifest missing entries: {sorted(missing)}"
+    s2_have = {k for k, r in mani.items() if r["stratum"] == "S2"}
+    s2_want = {k for k in need if "@eps" in k}
+    assert s2_have == s2_want, \
+        f"S2 variants on disk {sorted(s2_have)} != config {sorted(s2_want)}"
+
     samples, train_idx, test_c, test_d, variants = [], [], [], [], []
 
     def add(op, key, stratum, comm, role, rows):
+        # shard-vs-config consistency (config drift would breach IC hygiene)
+        with open(os.path.join(data_dir, shards.entry_dirname(key),
+                               "sidecar.json")) as f:
+            side = json.load(f)
+        for field, want in (("n_ic_train", n_tr), ("n_ic_test", n_te),
+                            ("N", int(d["N"])), ("T", int(d["T"])),
+                            ("t_max", float(d["t_max"]))):
+            assert side[field] == want, \
+                f"{key}: shard {field}={side[field]} != config {want}"
         u0, traj = shards.load_shard(data_dir, key, noise)
+        assert u0.shape[0] == n_tr + n_te, f"{key}: shard IC count mismatch"
         sl = slice(0, n_tr) if rows == "train" else slice(n_tr, None)
         idxs = []
         for i in range(*sl.indices(u0.shape[0])):
@@ -140,35 +166,38 @@ def load_benchmark(cfg, man, anchor, data_dir):
 # ---------------------------------------------------------------------------
 # joint two-head training
 # ---------------------------------------------------------------------------
-class JointDataset(torch.utils.data.Dataset):
-    """OpDataset + discovery targets (mechanism multilabel, coefficients)."""
+def build_joint_tensors(bench, idxs, encoder, vocab, max_len, n_in):
+    """Precompute the whole training set as stacked tensors.
 
-    def __init__(self, bench, idxs, encoder, vocab, max_len):
-        self.inner = OpDataset(bench, idxs, encoder, vocab, max_len)
-        self.bench, self.idxs = bench, idxs
-
-    def __len__(self):
-        return len(self.inner)
-
-    def __getitem__(self, i):
-        ic, sym, mask, y, comm, strat = self.inner[i]
-        op = self.bench.samples[self.idxs[i]].op
-        mech = torch.zeros(len(ALL_MECHANISMS_DISCOVERY))
-        coef = torch.zeros(len(ALL_MECHANISMS_DISCOVERY))
-        for n, c in op.coeffs.items():
+    Per-item Dataset.__getitem__ tensor construction costs ~seconds/step under
+    some runtimes (measured 5.5 s/step vs 43 ms of actual GPU compute); the
+    train set is only ~150 MB, so materializing it once removes the entire
+    input pipeline from the step time.
+    """
+    inner = OpDataset(bench, idxs, encoder, vocab, max_len, n_in=n_in)
+    ics, syms, masks, ys = [], [], [], []
+    mechs = torch.zeros(len(idxs), len(ALL_MECHANISMS_DISCOVERY))
+    coefs = torch.zeros(len(idxs), len(ALL_MECHANISMS_DISCOVERY))
+    for i in range(len(idxs)):
+        ic, sym, mask, y, _, _ = inner[i]
+        ics.append(ic); syms.append(sym); masks.append(mask); ys.append(y)
+        for n, c in bench.samples[idxs[i]].op.coeffs.items():
             j = ALL_MECHANISMS_DISCOVERY.index(n)
-            mech[j] = 1.0
-            coef[j] = float(c)
-        return ic, sym, mask, y, mech, coef
+            mechs[i, j], coefs[i, j] = 1.0, float(c)
+    return torch.utils.data.TensorDataset(
+        torch.stack(ics), torch.stack(syms), torch.stack(masks),
+        torch.stack(ys), mechs, coefs)
 
 
 def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
     tr = cfg["train"]
     torch.manual_seed(init_seed)
-    ds = JointDataset(bench, bench.train_idx, encoder, vocab,
-                      int(cfg["model"]["max_len"]))
+    ds = build_joint_tensors(bench, bench.train_idx, encoder, vocab,
+                             int(cfg["model"]["max_len"]),
+                             int(cfg["model"].get("n_in_steps", 4)))
     dl = torch.utils.data.DataLoader(ds, batch_size=int(tr["batch"]),
-                                     shuffle=True, drop_last=False)
+                                     shuffle=True, drop_last=False,
+                                     pin_memory=(device == "cuda"))
     opt = torch.optim.AdamW(model.parameters(), lr=float(tr["lr"]),
                             weight_decay=float(tr["weight_decay"]))
     epochs = int(tr["epochs"])
@@ -211,10 +240,14 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
 
 
 @torch.no_grad()
-def discovery_metrics(model, bench, idxs, device):
-    """Baseline-head discovery metrics for one variant's eval samples."""
+def discovery_metrics(model, bench, idxs, device, n_in):
+    """Baseline-head discovery metrics for one variant's eval samples.
+
+    Input is the OBSERVED trajectory prefix (n_in frames) -- the IC alone is
+    operator-independent, so discovery from it would be structurally at chance.
+    """
     model.eval()
-    ics = torch.tensor(np.stack([bench.samples[i].u0[:, None]
+    ics = torch.tensor(np.stack([bench.samples[i].traj[:n_in].T
                                  for i in idxs]), dtype=torch.float32).to(device)
     mlog, cpred = model.discover(ics)
     probs = torch.sigmoid(mlog).cpu().numpy()
@@ -267,13 +300,15 @@ def main():
     vocab = build_vocab([s.op for s in bench.samples])
     mcfg = cfg["model"]
     d_model, max_len = int(mcfg["d_model"]), int(mcfg["max_len"])
+    n_in = int(mcfg.get("n_in_steps", 4))
     tol = float(cfg["train"]["match_capacity_tol"])
     vsizes = {r: max(len(vocab.get(r, {})), 4) for r in REPS}
 
-    # capacity match (defense A1): resolve overrides, assert ALL arms
+    # capacity match (defense A1): resolve overrides, assert ALL arms at the
+    # PRE-REGISTERED tolerance (a looser gate here would overstate the claim)
     overrides, target, residuals = resolve_hidden_overrides(
         REPS, bench.N, len(bench.t_eval), vsizes, d_model,
-        len(MECHANISMS), max_len, tol=tol)
+        len(MECHANISMS), max_len, tol=tol, n_in_steps=n_in)
 
     def build(r, seed=0):
         torch.manual_seed(seed)
@@ -281,10 +316,10 @@ def main():
             bench.N, len(bench.t_eval), vsizes[r], d_model=d_model,
             symbol_kind=r, fusion=mcfg["fusion"], n_mech=len(MECHANISMS),
             max_len=max_len, n_discovery_mech=len(ALL_MECHANISMS_DISCOVERY),
-            data_hidden_override=overrides[r])
+            data_hidden_override=overrides[r], n_in_steps=n_in)
 
     counts, report = assert_matched_capacity({r: build(r) for r in REPS},
-                                             tol=max(tol, 0.03))
+                                             tol=tol)
     print("param counts (A1):\n" + report, flush=True)
     if residuals:
         print(f"capacity residuals > {tol:.0%}: "
@@ -312,13 +347,13 @@ def main():
     rows = []
     for v in variants:
         ev = evaluate(model, bench, v["idxs"], rep, vocab, max_len,
-                      device=device)
+                      device=device, n_in=n_in)
         rel = float(np.mean([r["rel_l2"] for r in ev]))
         metric = "rel_l2" if v["direction"] == "compose" else "rel_l2_decompose"
         rows.append({**base, "task": "prediction", "commutator": v["commutator"],
                      "metric_name": metric, "metric_value": rel})
         if v["direction"] == "compose":
-            f1, mae = discovery_metrics(model, bench, v["idxs"], device)
+            f1, mae = discovery_metrics(model, bench, v["idxs"], device, n_in)
             rows.append({**base, "task": "discovery",
                          "commutator": v["commutator"],
                          "metric_name": "mech_f1", "metric_value": f1})

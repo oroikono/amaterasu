@@ -25,7 +25,41 @@ def load(csv_path):
                 if k in r and r[k] not in ("", "nan"):
                     r[k] = float(r[k])
             rows.append(r)
-    return rows
+    return dedup_requeues(rows)
+
+
+def dedup_requeues(rows):
+    """Keep only the LATEST run's rows per cell-metric group.
+
+    Requeued/re-run SLURM tasks append a second full set of rows under a new
+    run_id (registry run_ids sort chronologically); without dedup those cells
+    would be silently double-weighted in every downstream statistic. Rows
+    without a run_id column (legacy/local CSVs) are kept as-is.
+    """
+    latest = {}
+    for r in rows:
+        if not r.get("run_id"):
+            continue
+        key = tuple(r.get(k) for k in ("stage", "encoder", "fusion", "backbone",
+                                       "split_seed", "init_seed", "task",
+                                       "metric_name", "commutator"))
+        if key not in latest or r["run_id"] > latest[key]:
+            latest[key] = r["run_id"]
+    out = []
+    dropped = 0
+    for r in rows:
+        if r.get("run_id"):
+            key = tuple(r.get(k) for k in ("stage", "encoder", "fusion",
+                                           "backbone", "split_seed",
+                                           "init_seed", "task", "metric_name",
+                                           "commutator"))
+            if r["run_id"] != latest[key]:
+                dropped += 1
+                continue
+        out.append(r)
+    if dropped:
+        print(f"dedup_requeues: dropped {dropped} superseded rows")
+    return out
 
 
 def paired_bootstrap(diffs, n=10000, seed=0):

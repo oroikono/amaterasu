@@ -48,39 +48,44 @@ def enumerate_operators(mechanisms, coeff_choices, max_terms=2,
 
 
 def make_split(mechanisms, coeff_choices, seed: int,
-               held_frac=0.35, max_terms=2, triples_sample=8) -> SplitManifest:
+               held_frac=0.35, max_terms=2, triples_sample=8,
+               protect=frozenset()) -> SplitManifest:
+    """`protect`: mechanisms whose singletons must NEVER leave training (e.g.
+    the S2 anchor's primitives) -- they may still appear in held-out
+    composites, which is exactly the compose test."""
     rng = np.random.default_rng(seed)
     universe = enumerate_operators(mechanisms, coeff_choices, max_terms,
                                    triples_sample, rng)
     singles = [o for o in universe if len(o.coeffs) == 1]
     multis = [o for o in universe if len(o.coeffs) >= 2]
 
-    # choose held-out COMPOSITES (compose direction)
-    rng.shuffle(multis)
-    n_hold = max(1, int(held_frac * len(multis)))
-    test_compose = multis[:n_hold]
-    train_multis = multis[n_hold:]
-
-    # train always includes all singletons (so primitives are seen)
-    train = list(singles) + list(train_multis)
-
-    # DECOMPOSE direction: pick some trained composites whose a pure piece we
-    # hold out -- but only if that piece is NOT otherwise in train as a needed
-    # primitive. To keep primitives available generally, we instead synthesize a
-    # dedicated decompose family: train a composite, hold out one of its pieces,
-    # and REMOVE that piece from the singleton training set for this manifest.
-    test_decompose: list[Operator] = []
-    # take up to 3 trained composites, hold out one primitive each
-    cand = [o for o in train_multis if len(o.coeffs) == 2][:3]
+    # DECOMPOSE primitive FIRST (compose-premise defense): pick ONE mechanism
+    # (never a protected one, e.g. the S2 anchor's) whose singleton is held
+    # out; its composites all stay in train (that is the decompose task:
+    # composite trained, pure piece zero-shot). Compose held-outs are then
+    # drawn ONLY from composites that avoid it, so every test_compose
+    # primitive's singleton remains in train -- the paper's compose claim is
+    # "primitives trained INDIVIDUALLY, composite predicted zero-shot".
+    dec_pool = sorted(set(mechanisms) - set(protect))
     held_primitive_names = set()
-    for comp in cand:
-        names = comp.names()
-        drop = names[rng.integers(len(names))]
+    test_decompose: list[Operator] = []
+    if dec_pool:
+        drop = dec_pool[int(rng.integers(len(dec_pool)))]
         held_primitive_names.add(drop)
         test_decompose.append(Operator({drop: coeff_choices[drop]}))
-    # remove those primitives from train singletons to make it genuine
-    train = [o for o in train
-             if not (len(o.coeffs) == 1 and o.names()[0] in held_primitive_names)]
+
+    # choose held-out COMPOSITES (compose direction) among eligible multis
+    eligible = [o for o in multis
+                if not (set(o.names()) & held_primitive_names)]
+    rng.shuffle(eligible)
+    n_hold = max(1, int(held_frac * len(eligible)))
+    test_compose = eligible[:n_hold]
+    heldout_canon = {_canon(o) for o in test_compose}
+    train_multis = [o for o in multis if _canon(o) not in heldout_canon]
+
+    # train = remaining singletons + remaining composites
+    train = [o for o in singles
+             if o.names()[0] not in held_primitive_names] + train_multis
 
     man = SplitManifest(seed, train, test_compose, test_decompose,
                         meta={"n_universe": len(universe),
@@ -100,11 +105,15 @@ def _assert_no_leakage(man: SplitManifest):
     # 1) no held-out composite (canonical) appears in train
     for o in man.test_compose:
         assert _canon(o) not in train_canon, f"LEAK: {_canon(o)} in train"
-    # 2) every compose held-out's primitives ARE in train (genuine composition)
+    # 2) every compose held-out's primitives are trained INDIVIDUALLY (their
+    #    singletons are in train) -- the compose premise, not merely "the
+    #    mechanism occurs somewhere inside a trained composite"
     for o in man.test_compose:
         for m in o.names():
-            assert m in train_mech, (
-                f"compose held-out {_canon(o)} has unseen primitive {m}")
+            single = Operator({m: o.coeffs[m]})
+            assert _canon(single) in train_canon, (
+                f"compose held-out {_canon(o)}: primitive {m} not trained "
+                f"as a singleton (compose premise violated)")
     # 3) decompose held-out primitives are NOT in train singletons
     for o in man.test_decompose:
         assert _canon(o) not in train_canon, f"LEAK(decompose): {_canon(o)}"

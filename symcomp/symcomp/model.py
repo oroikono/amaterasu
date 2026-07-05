@@ -109,14 +109,19 @@ class OperatorLearner(nn.Module):
     def __init__(self, n_grid, T_out, vocab_size, d_model=128,
                  symbol_kind="grammar", fusion="xattn", n_mech=5,
                  depth=2, max_len=32, n_discovery_mech=8, width_mult=None,
-                 data_hidden_override=None):
+                 data_hidden_override=None, n_in_steps=1):
         super().__init__()
+        # n_in_steps: how many observed trajectory frames feed the data branch.
+        # MUST be > 1 for the discovery head to be identifiable: a single IC
+        # frame carries no information about the operator, so discovery from
+        # n_in_steps=1 is structurally at chance.
         # width_mult lets the harness tune the data branch so EVERY arm matches
         # params (defense A1). Defaults: floor widens, coeff_vector also widens a
         # bit to compensate for its tiny (MLP) symbol branch.
         if width_mult is None:
             width_mult = {"none": 2, "coeff_vector": 1}.get(symbol_kind, 1)
-        self.data_enc = DataEncoder(n_grid, d_model, depth=depth, width_mult=width_mult,
+        self.data_enc = DataEncoder(n_grid, d_model, n_in_steps=n_in_steps,
+                                    depth=depth, width_mult=width_mult,
                                     hidden_override=data_hidden_override)
         self.sym_enc = SymbolEncoder(symbol_kind, vocab_size, d_model, n_mech,
                                      depth, max_len)

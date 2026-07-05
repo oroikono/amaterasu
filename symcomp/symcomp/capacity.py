@@ -11,14 +11,15 @@ from .model import OperatorLearner, count_params
 
 
 def build_arm(kind, n_grid, T_out, vocab_size, d_model, n_mech, max_len,
-              width_mult=None, depth=2):
+              width_mult=None, depth=2, n_in_steps=1):
     return OperatorLearner(n_grid, T_out, vocab_size, d_model=d_model,
                            symbol_kind=kind, fusion="xattn", n_mech=n_mech,
-                           depth=depth, max_len=max_len, width_mult=width_mult)
+                           depth=depth, max_len=max_len, width_mult=width_mult,
+                           n_in_steps=n_in_steps)
 
 
 def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
-                             max_len, tol=0.02):
+                             max_len, tol=0.02, n_in_steps=1):
     """Binary-search a per-arm data-branch hidden size so every arm matches the
     symbolic-arm param count within `tol`.
 
@@ -38,14 +39,15 @@ def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
     """
     ref_kind = "grammar" if "grammar" in reps else reps[0]
     ref = build_arm(ref_kind, n_grid, T_out, vocab_sizes.get(ref_kind, 8),
-                    d_model, n_mech, max_len, width_mult=1)
+                    d_model, n_mech, max_len, width_mult=1,
+                    n_in_steps=n_in_steps)
     target = count_params(ref)
 
     def params_for(kind, h):
         vs = vocab_sizes.get(kind, 8) if kind not in ("coeff_vector", "none") else 1
         m = OperatorLearner(n_grid, T_out, vs, d_model=d_model, symbol_kind=kind,
                             fusion="xattn", n_mech=n_mech, max_len=max_len,
-                            data_hidden_override=h)
+                            data_hidden_override=h, n_in_steps=n_in_steps)
         return count_params(m)
 
     out, residuals = {}, {}

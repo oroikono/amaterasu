@@ -35,6 +35,8 @@ model:
   d_model: 256
   depth: 2
   max_len: 32
+  n_in_steps: 4   # observed trajectory frames fed to the data branch; must be
+                  # >1 or the discovery head has no operator information
   fusion: xattn             # B sweeps: [xattn, film]
   backbone: transformer     # B sweeps: [transformer, vae]
   scales: [128, 256, 512]   # B scale ablation

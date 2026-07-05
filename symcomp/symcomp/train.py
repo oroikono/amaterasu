@@ -8,15 +8,19 @@ from .model import OperatorLearner, count_params
 
 
 class OpDataset(Dataset):
-    def __init__(self, bench, idxs, encoder, vocab, max_len):
+    def __init__(self, bench, idxs, encoder, vocab, max_len, n_in=1):
         self.b = bench; self.idxs = idxs
         self.encoder = encoder; self.vocab = vocab; self.max_len = max_len
+        self.n_in = n_in  # observed trajectory frames fed to the data branch
 
     def __len__(self): return len(self.idxs)
 
     def __getitem__(self, i):
         s = self.b.samples[self.idxs[i]]
-        ic = torch.tensor(s.u0[:, None], dtype=torch.float32)       # (N,1)
+        if self.n_in == 1:
+            ic = torch.tensor(s.u0[:, None], dtype=torch.float32)   # (N,1)
+        else:
+            ic = torch.tensor(s.traj[:self.n_in].T, dtype=torch.float32)  # (N,k)
         y = torch.tensor(s.traj, dtype=torch.float32)               # (T,N)
         if self.encoder == "coeff_vector":
             sym = torch.tensor(enc_coeff_vector(s.op))
@@ -64,9 +68,9 @@ def train_model(bench, encoder="grammar", fusion="xattn", epochs=40,
 
 @torch.no_grad()
 def evaluate(model, bench, idxs, encoder, vocab, max_len, device="cpu",
-             ablate_symbol=False):
+             ablate_symbol=False, n_in=1):
     """Return list of dicts: per-sample relative L2 + commutator + stratum."""
-    ds = OpDataset(bench, idxs, encoder, vocab, max_len)
+    ds = OpDataset(bench, idxs, encoder, vocab, max_len, n_in=n_in)
     dl = DataLoader(ds, batch_size=32)
     rows = []
     model.eval()
