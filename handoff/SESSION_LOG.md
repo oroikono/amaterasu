@@ -365,3 +365,36 @@ docstring spec.
   4. Optionally rerun the local replication (bootstrap-free): regen data
      3 min, then the driver loop — see git history for drive_stageA.sh, or
      just trust Euler.
+
+## 2026-07-05 (afternoon) — Claude (Alienware) — STAGE A PRELIMINARY RESULTS (88/90 cells, Euler)
+
+- Euler Stage A finished 88/90 (task 2 TIMEOUT on a flaky node — cuda was
+  up, siblings took minutes; task 32 node-cancelled at 2 min). Resubmitted
+  both as job 5781548 (RUNNING). 2039 rows in master.csv.
+- **PRELIMINARY, pre-registered analysis (do not tune post-hoc):**
+  - **H1 NEGATIVE:** grammar does NOT beat baselines on zero-shot compose
+    rel_l2. coeff_vector BETTER than grammar (-0.035, CI[-0.039,-0.030]);
+    data-only slightly better (-0.010, CI excl. 0); all symbolic reps
+    statistically equivalent to each other.
+  - **H4: scrambled ≈ real grammar** (+0.002, CI spans 0) → per the
+    pre-registered rule: no compositional-structure claim.
+  - **H2 CONFIRMED (stratified, anchor sweep = the pre-registered test):**
+    error degrades monotonically with ||[A,B]|| for EVERY rep — Spearman
+    rho: coeff_vector +0.72, grammar +0.70, prose_tree +0.71,
+    lample_charton +0.66, scrambled +0.68, data-only +0.48; mean
+    degradation +0.04–0.06 rel_l2 across the eps sweep. NOTE: the pooled
+    regression in aggregate.py HIDES this (S1-at-0 includes hard
+    composites; S2 rows are the easy anchor family) — the stratified
+    within-anchor test is the correct pre-registered one; consider adding
+    it to aggregate.py as h2_stratified().
+  - Discovery (baseline head): mech_f1 ≈ 0.67 ALL arms, no separation
+    (expected — the head reads the shared data branch; H3 needs the AR
+    decoder).
+  - **Decision per pre-registration: pivot headline to the commutator law**
+    ("grammar tied but H2 holds"). The negative-result path was designed
+    in; nothing was tuned to force a positive.
+- Local 18-cell partial archive: SCRAP (mixed pre-/post-fix split code
+  across cells — Euler log comparison exposed it). Euler is canonical.
+- Next: final 2 cells → full 90-cell aggregate + money plot; add
+  h2_stratified to aggregate.py; results memo draft mapping panels to
+  H1-H5 decisions.
