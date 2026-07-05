@@ -398,3 +398,26 @@ docstring spec.
 - Next: final 2 cells → full 90-cell aggregate + money plot; add
   h2_stratified to aggregate.py; results memo draft mapping panels to
   H1-H5 decisions.
+
+## 2026-07-05 — Claude (Alienware) — STAGE A COMPLETE (90/90) — FREEZE POINT REACHED 9 DAYS EARLY
+
+- Requeued cells landed; final master.csv = 2088 rows, 90/90 cells.
+  Final numbers confirm the preliminary read:
+  - H1 NEGATIVE (grammar ≤ baselines; coeff_vector best, −0.037 CI clean).
+  - H4: scrambled == grammar → no structure claim.
+  - H2 STRATIFIED CONFIRMED: rho +0.48…+0.72, positive for every arm.
+  - Discovery baseline: no separation (H3 needs AR decoder). Decompose:
+    directional only (H5 → Stage C).
+- **Deliverables:** `docs/stageA_results_memo.md` (2-page, panels → H1-H5
+  decisions per pre-registration, caveats, next steps) +
+  `symcomp/results_stageA/` frozen master.csv + money_plot.png.
+  h2_stratified() is in aggregate.py (pooled version kept, labeled
+  confounded).
+- Pre-registration discipline held: negative headline reported as-is,
+  pivot to the commutator law taken per the written decision rule. Nothing
+  tuned post-hoc.
+- **The plan's day-14 freeze-point deliverable exists on day 5.**
+- Next session: Stage B robustness (fusion/backbone/scale) on the pivoted
+  headline; AR decoder for H3; E2/E3 at scale; prior-art re-check before
+  write-up. Euler access: user should still add the key (socket needs
+  password each time); everything else is one `sbatch` away.
