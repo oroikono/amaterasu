@@ -266,3 +266,33 @@ docstring spec.
 - All tests green (physics, solvers, registry, smoke) + mini cell green.
 - Production cell 0 re-running locally for the real timing.
 - Next if dies: check prod_cell0.log timing; commit+push; ssh euler retry.
+
+## 2026-07-05 03:40 CEST — Claude (Alienware) — FULL LOCAL STAGE A LAUNCHED (90 cells, ~7h); Euler = 1 command when access opens
+
+- **Production cell timing: 277s** (was 6.9h before the input-pipeline fix —
+  90x). Full Stage A ≈ 7 GPU-hours → running the ENTIRE pre-registered
+  90-cell battery locally overnight (production config, N=256, full ICs,
+  80 epochs). Order is (split,init)-major: every 6 consecutive cells
+  complete all 6 arms for one (split,init) pair, so a partial night still
+  yields paired, analyzable data. Cell 0's single-cell S2 curve already
+  shows rel_l2 rising with commutator (0.20→0.24) — anecdote, not result;
+  the battery decides.
+- Provenance: these are REAL runs of the real config on the Alienware
+  (RTX 5080 laptop), registered in the local registry
+  (scratchpad work_prod/, runs/<id> + master.csv). Euler remains the
+  canonical environment — rerun there when access opens.
+- Pushed `02c7583`: `cluster/euler_bootstrap.sh` = ONE command on a login
+  node does everything (storage autoprobe → env persist → venv on work →
+  cluster tests + flock probe → data array → Stage A gated afterok).
+  D12/D13 recorded in DECISIONS; TODO refreshed.
+- Watchers armed: Stage A error monitor; SSH-success watcher (retries
+  every 5 min — paste the key and I take Euler from there).
+- **Morning checklist for whoever wakes up first:**
+  1. Local Stage A state: `wc -l <scratchpad>/stageA_done.txt` (n/90);
+     aggregate: `PYTHONPATH=. python scripts/aggregate.py
+     --csv <scratchpad>/work_prod/results/master.csv --task prediction
+     --metric rel_l2` (also task=discovery, metric=mech_f1).
+  2. Euler: authorize the key from chat (or skip) and run
+     `bash cluster/euler_bootstrap.sh` on a login node from symcomp/.
+  3. Copy the local master.csv somewhere durable if the sweep finished
+     (scratchpad is /tmp — survives reboot only until tmp cleanup!).
