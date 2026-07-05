@@ -615,3 +615,19 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   directly BEFORE symcomp.encoders skips its ENCODERS registration silently
   (circular-import partial module in _load_extension_encoders). Pipeline
   imports encoders first, so no Stage AX impact.
+
+## 2026-07-05 (afternoon) — Claude (Alienware) — Stage AX ready+pushed (ac66922); Euler link wedged mid-submit
+
+- 10 exploratory arms implemented by agents (one module each), ALL 16 arms
+  verified: injective on universe, <=29 tokens, PYTHONHASHSEED-stable;
+  AX dry-run green (fourier_symbol cell, capacity +0.1%). Pushed ac66922.
+- Euler: SSH master alive but channels hang (VPN blip likely). The
+  240-cell AX submission (SYMCOMP_CONFIG=configs/stageAX.yaml
+  SYMCOMP_STAGE=AX sbatch --array=0-239 cluster/sbatch_stageA.sh) was IN
+  the timed-out command chain — UNKNOWN whether it reached sbatch.
+- NEXT (whoever resumes): re-establish ControlMaster (rm -f
+  ~/.ssh/euler-cm.sock && ssh -fN -M -S ~/.ssh/euler-cm.sock -o
+  ControlPersist=12h euler), then CHECK BEFORE RESUBMITTING:
+  squeue --me + sacct -X --name=symcomp_A --starttime=now-2hours.
+  Also rsync repo to euler (ac66922) BEFORE submitting if absent —
+  encoders_ext/ + stageAX.yaml must be there or all 240 tasks fail fast.
