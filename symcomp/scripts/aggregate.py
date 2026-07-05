@@ -189,8 +189,14 @@ if __name__ == "__main__":
     ap.add_argument("--csv", required=True)
     ap.add_argument("--task", default="prediction")
     ap.add_argument("--metric", default="rel_l2")
+    ap.add_argument("--stage", default=None,
+                    help="restrict to one stage (e.g. A, AX) -- stages use "
+                         "different configs and must not be pooled")
     a = ap.parse_args()
     rows = load(a.csv)
+    if a.stage:
+        rows = [r for r in rows if r.get("stage") == a.stage]
+        print(f"stage={a.stage}: {len(rows)} rows")
     print(f"loaded {len(rows)} rows")
     tab, ref = h1_table(rows, a.task, a.metric)
     print(f"\nH1: {ref} minus baseline (positive => {ref} better), 95% CI [sign p]:")
