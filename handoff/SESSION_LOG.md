@@ -631,3 +631,19 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   squeue --me + sacct -X --name=symcomp_A --starttime=now-2hours.
   Also rsync repo to euler (ac66922) BEFORE submitting if absent —
   encoders_ext/ + stageAX.yaml must be there or all 240 tasks fail fast.
+
+## 2026-07-05 (afternoon) — Claude (Alienware) — Stage AX SUBMITTED: job 5847283, 240 cells
+
+- Link re-established (eu-login-29). Confirmed the wedged submission never
+  reached sbatch (no double-submit); rsynced ac66922+ to Euler (10
+  encoders_ext modules + stageAX.yaml verified present) and submitted:
+  SYMCOMP_CONFIG=configs/stageAX.yaml SYMCOMP_STAGE=AX, array 0-239.
+- 16 arms x 15 (split,init) cells; EXPLORATORY (not pre-registered) —
+  report as generality test of the H1 null. Watch the fourier_symbol arm
+  (semantic-ceiling probe): a win there = semantics beat syntax; a tie
+  extends the null from syntactic to semantic encodings.
+- Aggregation when drained: same aggregate.py on master.csv filtered to
+  stage=AX (h1_table vs grammar + h2_stratified per arm; rows carry
+  run_id for dedup).
+- Next if dies: check job 5847283; when drained, aggregate AX, extend
+  memo with the exploratory panel, update TODO (AR decoder next).
