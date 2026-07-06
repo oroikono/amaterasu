@@ -680,3 +680,28 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   master.csv; aggregate --stage AX (exploratory panel; fourier_symbol is
   the arm to look at first) and check AD probe exact_match; 3) if probe
   sane, submit AD --array=1-89; 4) memo update, no overclaims.
+
+## 2026-07-06 — Claude (Alienware) — AX RESULTS IN (240/240); AD probe diagnosed; AD array 5882055 running
+
+- **Stage AX complete** (exploratory, 16 arms, 15 cells each). As measured:
+  - H2 commutator law: rho POSITIVE for ALL 16 arms (+0.32…+0.75).
+  - fourier_symbol (semantic ceiling: tokenized L_hat) TIES grammar
+    (+0.005, CI spans 0): semantic conditioning does not beat syntax.
+  - An ORDERING emerged (CI-clean at 15 seeds, EXPLORATORY — multiple
+    comparisons, length/vocab covariates apply): numeric-flavored arms
+    best (coeff_vector −0.052 vs grammar; digit_p10 −0.026; unary_order
+    −0.025), classic serializations mid-pack (postfix≈prefix: minimal
+    pair TIED — traversal order irrelevant), exotic structure worst
+    (slot_vector +0.051 WORSE than grammar; dag_edge_list, subgrammar
+    also worse). slot_vector vs coeff_vector gap ≈0.10 isolates the
+    CONTINUOUS-VALUE pathway (not layout) as coeff_vector's advantage.
+- **AD probe (AR decoder H3, grammar cell 0): exact_match 0.000 on ALL
+  held-out variants, but 11/12 EXACT on TRAIN operators** (checkpoint
+  diagnostic on Euler). The decoder works; the zero is a REAL
+  generalization failure: the model names seen laws from data but cannot
+  compose names for unseen combinations — while its prediction head
+  composes fine. This makes the 6-arm decode comparison genuinely
+  discriminative → submitted remaining cells as job 5882055 (89 RUNNING).
+- Next if dies: when 5882055 drains → aggregate --stage AD task=discovery
+  metric=exact_match (+ mech_f1); extend memo (AX panel + H3 panel);
+  consider AX-decode follow-up (10 new arms with AR decoder).
