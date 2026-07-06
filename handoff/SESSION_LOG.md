@@ -665,3 +665,18 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
 - Next if dies: check 5847283 (aggregate --stage AX) and 5847781 (log:
   logs/symcomp_A_5847781_0.out; exact_match rows in master.csv stage=AD);
   then AD array 1-89; aggregate --stage AD task=discovery metric=exact_match.
+
+## 2026-07-06 00:0x CEST — Claude (Alienware) — Euler link wedged again (transport); jobs unaffected
+
+- Mux master alive, channels hang, ping to euler.ethz.ch OK (~280ms VPN).
+  Same wedge as yesterday afternoon. Cluster jobs (AX 5847283 all-240
+  RUNNING at last contact; AD probe 5847781) CONTINUE unaffected — only
+  monitoring is blind. Recovery watcher armed (10-min retries).
+- WAKE-UP (user): rm -f ~/.ssh/euler-cm.sock && ssh -fN -M -S
+  ~/.ssh/euler-cm.sock -o ControlPersist=12h euler   (in the WSL terminal)
+  ...or better, add the key on Euler (chat has the line) and no socket is
+  ever needed again.
+- THEN (me or next agent): 1) sacct -j 5847283,5847781 states; 2) pull
+  master.csv; aggregate --stage AX (exploratory panel; fourier_symbol is
+  the arm to look at first) and check AD probe exact_match; 3) if probe
+  sane, submit AD --array=1-89; 4) memo update, no overclaims.
