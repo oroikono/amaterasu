@@ -37,6 +37,7 @@ def resolve_hidden_overrides(reps, n_grid, T_out, vocab_sizes, d_model, n_mech,
     arms. The residual is reported so the harness can decide; for the headline
     H1 claim, report the exact per-arm param counts in the paper table so the
     small remaining gap is transparent rather than hidden.
+    
     """
     ref_kind = "grammar" if "grammar" in reps else reps[0]
     ref = build_arm(ref_kind, n_grid, T_out, vocab_sizes.get(ref_kind, 8),

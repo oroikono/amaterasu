@@ -71,6 +71,29 @@ def build_split(cfg, split_seed):
     sp = cfg["split"]
     mechs = list(cfg["mechanisms"]["linear"])
     coeffs = {m: float(cfg["coeffs"][m]) for m in mechs}
+    if sp.get("decompose_anchor"):
+        # ADEC mode ("train the mixture, find the pure laws"): the anchor
+        # primitives' singletons are held out; every composite (incl. the
+        # anchor) trains. No compose direction, no S2 variants -- the eval is
+        # purely mixture -> pure-law zero-shot (H5 pulled forward). split_seed
+        # only varies nothing here (deterministic split); init seeds carry
+        # the variance.
+        from symcomp.splits import enumerate_operators, SplitManifest
+        import numpy as np
+        rng = np.random.default_rng(split_seed)
+        universe = enumerate_operators(mechs, coeffs, sp["max_terms"],
+                                       sp["triples_sample"], rng)
+        held = {"advection", "diffusion"}
+        train = [o for o in universe
+                 if len(o.coeffs) >= 2 or o.names()[0] not in held]
+        dec = [o for o in universe
+               if len(o.coeffs) == 1 and o.names()[0] in held]
+        man = SplitManifest(seed=split_seed, train=train, test_compose=[],
+                            test_decompose=dec,
+                            meta={"mode": "decompose_anchor"})
+        anchor = Operator({"advection": coeffs["advection"],
+                           "diffusion": coeffs["diffusion"]})
+        return man, anchor
     # anchor primitives are protected: their singletons must stay in train so
     # the forced-heldout anchor still satisfies the compose premise
     man = make_split(mechs, coeffs, split_seed, held_frac=sp["held_frac"],
@@ -106,16 +129,19 @@ def load_benchmark(cfg, man, anchor, data_dir):
 
     # completeness: refuse to run against a partial/stale data dir, otherwise
     # cells silently evaluate different variant sets and stop being comparable
+    dec_anchor = bool(cfg["split"].get("decompose_anchor"))
     need = {o.canonical_str() for o in
             man.train + man.test_compose + man.test_decompose}
-    need |= {f"{anchor.canonical_str()}@eps{float(e):g}"
-             for e in d["epsilons"] if float(e) > 0}
+    if not dec_anchor:
+        need |= {f"{anchor.canonical_str()}@eps{float(e):g}"
+                 for e in d["epsilons"] if float(e) > 0}
     missing = need - set(mani)
     assert not missing, f"data_dir manifest missing entries: {sorted(missing)}"
-    s2_have = {k for k, r in mani.items() if r["stratum"] == "S2"}
-    s2_want = {k for k in need if "@eps" in k}
-    assert s2_have == s2_want, \
-        f"S2 variants on disk {sorted(s2_have)} != config {sorted(s2_want)}"
+    if not dec_anchor:
+        s2_have = {k for k, r in mani.items() if r["stratum"] == "S2"}
+        s2_want = {k for k in need if "@eps" in k}
+        assert s2_have == s2_want, \
+            f"S2 variants on disk {sorted(s2_have)} != config {sorted(s2_want)}"
 
     samples, train_idx, test_c, test_d, variants = [], [], [], [], []
 
@@ -152,9 +178,10 @@ def load_benchmark(cfg, man, anchor, data_dir):
         variants.append({"label": op.canonical_str(), "stratum": "S1",
                          "commutator": 0.0, "direction": "decompose",
                          "idxs": idxs, "op": op})
-    # S2 epsilon sweep on the (held-out) anchor
+    # S2 epsilon sweep on the (held-out) anchor -- not applicable in
+    # decompose_anchor mode, where the anchor composite is TRAINED
     for key, rec in sorted(mani.items()):
-        if rec["stratum"] != "S2":
+        if dec_anchor or rec["stratum"] != "S2":
             continue
         comm = float(rec["commutator"])
         idxs = add(anchor, key, "S2", comm, "composite", "eval")
@@ -428,8 +455,18 @@ def main():
                       device=device, n_in=n_in)
         rel = float(np.mean([r["rel_l2"] for r in ev]))
         metric = "rel_l2" if v["direction"] == "compose" else "rel_l2_decompose"
+        if v["direction"] == "decompose" and cfg["split"].get("decompose_anchor"):
+            # H5 asymmetry needs per-law rows (advection vs diffusion)
+            metric = f"rel_l2_dec[{v['op'].names()[0]}]"
         rows.append({**base, "task": "prediction", "commutator": v["commutator"],
                      "metric_name": metric, "metric_value": rel})
+        if (v["direction"] == "decompose" and model.ar_decoder is not None
+                and cfg["split"].get("decompose_anchor")):
+            em = ar_exact_match(model, bench, v["idxs"], rep, vocab,
+                                max_len, n_in, device)
+            rows.append({**base, "task": "discovery", "commutator": 0.0,
+                         "metric_name": f"exact_match_dec[{v['op'].names()[0]}]",
+                         "metric_value": em})
         if v["direction"] == "compose":
             # E2 (channel masking): same eval with the symbol channel ablated.
             # leverage = rel_l2_masked - rel_l2 quantifies how much the model

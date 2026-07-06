@@ -145,10 +145,9 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     root = a.workdir or registry.work_dir()
 
-    cfgs = {"AD": yaml.safe_load(open(os.environ.get("ORD_CFG_AD",
-                                                     "configs/stageAD.yaml"))),
-            "AX": yaml.safe_load(open(os.environ.get("ORD_CFG_AX",
-                                                     "configs/stageAX.yaml")))}
+    cfgs = {s: yaml.safe_load(open(os.environ.get(
+                f"ORD_CFG_{s}", f"configs/stage{s}.yaml")))
+            for s in a.stages.split(",")}
     cells = {}   # (stage, rep, split, init) -> latest run dir
     for rid in registry.list_runs(root):
         rd = os.path.join(root, "runs", rid)
