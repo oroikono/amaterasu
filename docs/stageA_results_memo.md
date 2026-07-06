@@ -86,15 +86,46 @@ form escapes the commutator law.* Symbols are, in effect, a lookup of the
 generator's coefficients — which is why the minimal coefficient vector is
 the best (and cheapest) conditioning channel.
 
+## Stage AX — exploratory 16-arm generality sweep (2026-07-06; NOT pre-registered)
+
+240 cells (16 representations × 15 seed-pairs), same protocol, max_len 48.
+Multiple-comparison and covariate caveats apply (sequence length, realized
+vocab differ by arm; slot/bag arms trigger capacity reallocation to the
+data branch). As measured:
+
+- **The commutator law is universal: Spearman ρ positive for all 16 arms**
+  (+0.32 slot_vector … +0.75 physics_typed_tags).
+- **Semantics does not beat syntax:** `fourier_symbol` (tokenized samples
+  of the operator's own Fourier multiplier — the sufficient statistic in
+  the commuting stratum) ties grammar (+0.005, CI spans 0).
+- **Serialization order is irrelevant:** postfix vs prefix (exact
+  minimal pair) statistically indistinguishable.
+- **An ordering exists at 15-seed resolution** (grammar-minus-arm,
+  positive = grammar better): numeric-flavored conditioning best
+  (coeff_vector −0.052; digit_p10 −0.026; unary_order −0.025), classic
+  tree serializations mid-pack (−0.004…−0.010), heavily-structured
+  layouts worst (subgrammar_typed_rules +0.012; slot_vector +0.051).
+  The slot_vector↔coeff_vector gap (≈0.10) isolates the CONTINUOUS-value
+  input pathway, not the fixed-slot layout, as coeff_vector's advantage.
+
+## H3 probe (AR discovery decoder; single grammar cell, 2026-07-06)
+
+The autoregressive decoder (rep's own vocab, conditioned on observed
+trajectory frames) decodes TRAINING operators nearly perfectly (11/12
+strict exact-match) but scores **0.000 on every held-out composition** —
+while the same model's prediction head handles those compositions at
+rel_l2 ≈ 0.2–0.3. Naming a law and simulating it dissociate: the model
+cannot compose symbolic NAMES for unseen combinations it can nonetheless
+predict. The full 6-arm Stage AD battery (whether any representation's
+decoder composes names better) is running; results will be appended as
+measured.
+
 ## Caveats
 - Single fusion (xattn) + backbone (transformer); Stage B robustness sweep
   pending — H1's negative should be confirmed across fusion/backbone/scale
   before it is called final.
-- An exploratory extended representation sweep (Stage AX, ~10 additional
-  symbolic encodings incl. subgrammar factorizations, spectral-symbol
-  tokens, digit coefficients, order-free bags) is in preparation — NOT
-  pre-registered; will be reported separately as a generality test of the
-  null.
+- Stage AX and AD are exploratory (not pre-registered); report them as
+  generality/mechanism probes, never pooled with Stage A statistics.
 - Discovery baseline only (see H3). 5 split-seeds → sign-test floor 0.06.
 - The 18-cell local (Alienware) partial replication was discarded (mixed
   split-code versions); Euler is the sole source of truth for Stage A.
