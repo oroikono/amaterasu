@@ -785,3 +785,15 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
 - Next if dies: at drain aggregate stages ORDAD/ORDAX, ADEC, ADRV
   (exact_match by arm is THE deliverable — does derivative-level shared
   substructure finally enable compositional naming?).
+
+## 2026-07-07 — Claude (Alienware) — probe 6060905 COMPLETE: order-invariance universal; naming fails BOTH directions
+
+- P1 (order swap, 330 checkpoints, 20 stage-arm combos): |gap| <= 2e-4
+  everywhere (max single-variant 0.003); order-free arms (coeff_vector,
+  fourier_symbol, slot_vector) exactly 0.0000 = probe sanity anchors hold.
+  A+B == B+A architecturally, all lanes, both stages.
+- P2 (decompose naming on AD checkpoints): exact_match ~0 (grammar 0.0000,
+  scrambled 0.0000, lample 0.0010, prose 0.0042) — symbolic naming neither
+  composes (H3) nor decomposes at mechanism-level vocab.
+- Still running: ADEC 6060948 (~89), ADRV 6062494 (~89) — the derivative-
+  level retest of exactly these questions.
