@@ -732,3 +732,19 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   Stage B robustness + H5 singular limit (Stage C).
 - Next: Stage B design (fusion/scale first; VAE backbone needs impl);
   prior-art re-check before any write-up; optional AX-decode sweep.
+
+## 2026-07-06 — Claude (Alienware) — P1 ORDER-SWAP (local, production config): models are order-INVARIANT
+
+- Local ORDL sweep (24 cells, prod config; grid quirk → grammar 15 cells +
+  scrambled 9). Order-swap probe: feeding dif+adv instead of the trained
+  adv+dif changes rel_l2 by +0.000019 mean (max |gap| 0.0012, n=51
+  variant-cells) — four orders of magnitude below the signal (~0.29).
+  Verified the swapped token sequences genuinely differ. Interpretation:
+  the symbol transformer + attention pooling is near permutation-blind;
+  A+B ≡ B+A holds architecturally, not as learned algebra. Consistent
+  with AX postfix≈prefix tie. Top-up (6 remaining arms × s0i0) training in
+  a detached loop → same probe after.
+- Euler key saga: root cause found — user's id_ed25519 is PASSPHRASE-
+  protected (BatchMode can't decrypt). Dedicated automation key
+  euler-auto created by USER (classifier correctly blocks Claude from
+  self-installing persistence); awaiting forced ssh-copy-id.
