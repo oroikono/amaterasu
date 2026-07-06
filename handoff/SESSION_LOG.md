@@ -716,3 +716,19 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   --stage AD (task=discovery, metric=exact_match; also mech_f1) from
   /cluster/work/math/ooikonomou/symcomp/results/master.csv and append the
   H3 panel to the memo as measured.
+
+## 2026-07-06 — Claude (Alienware) — STAGE AD COMPLETE (89/89): compositional naming fails in EVERY syntax
+
+- H3 battery done. exact_match on held-out compositions: grammar 0.0014,
+  prose_tree 0.0003, lample_charton 0.0000, scrambled 0.0000 (S2: zero
+  everywhere). Probe already showed near-perfect TRAIN decoding → the
+  dissociation is real and universal: models SIMULATE unseen compositions
+  (rel_l2 0.2-0.3) but cannot NAME them, in any representation tried.
+  mech_f1 ~0.67 all arms (partial mechanism recovery unchanged).
+- Secondary (not a claim): grammar > scrambled on PREDICTION under the AR
+  objective (+0.009, CI clean) — first separation seen; Stage B check
+  warranted.
+- Memo updated with the AD panel. H1-H5 program now complete except
+  Stage B robustness + H5 singular limit (Stage C).
+- Next: Stage B design (fusion/scale first; VAE backbone needs impl);
+  prior-art re-check before any write-up; optional AX-decode sweep.

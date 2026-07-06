@@ -112,13 +112,28 @@ data branch). As measured:
 
 The autoregressive decoder (rep's own vocab, conditioned on observed
 trajectory frames) decodes TRAINING operators nearly perfectly (11/12
-strict exact-match) but scores **0.000 on every held-out composition** —
-while the same model's prediction head handles those compositions at
-rel_l2 ≈ 0.2–0.3. Naming a law and simulating it dissociate: the model
-cannot compose symbolic NAMES for unseen combinations it can nonetheless
-predict. The full 6-arm Stage AD battery (whether any representation's
-decoder composes names better) is running; results will be appended as
-measured.
+strict exact-match in the probe) but essentially never composes the name
+of a HELD-OUT combination. Full battery (Stage AD, 90 cells, 2026-07-06):
+
+| arm | exact_match (held-out compose) | S1 | S2 |
+|---|---|---|---|
+| grammar | 0.0014 | 0.0031 | 0.0000 |
+| prose_tree | 0.0003 | 0.0006 | 0.0000 |
+| lample_charton | 0.0000 | 0.0000 | 0.0000 |
+| grammar_scrambled | 0.0000 | 0.0000 | 0.0000 |
+
+All ≈ 0 with no meaningful separation between syntaxes; mechanism-level
+partial credit (mech_f1 ≈ 0.67) is unchanged across arms. The same models
+predict these compositions at rel_l2 ≈ 0.2–0.3. **Naming a law and
+simulating it dissociate, and the failure to compose names is
+representation-independent** — grammar's "composition = one production"
+inductive bias did not rescue the decoder. (Strict-metric caveat: exact
+sequence match; mech_f1 shows partial mechanism recovery.)
+
+Secondary observation, not a claim: under the joint AR objective, real
+grammar's PREDICTION slightly exceeded scrambled for the first time
+(+0.009, CI[+0.002,+0.016]; single exploratory stage) — a Stage B check
+is warranted before interpreting.
 
 ## Caveats
 - Single fusion (xattn) + backbone (transformer); Stage B robustness sweep
