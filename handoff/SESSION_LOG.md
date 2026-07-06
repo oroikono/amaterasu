@@ -766,3 +766,22 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
 - Next if dies: watch 6060905/6060948; aggregate ORDAD/ORDAX rows (P1 gaps
   per arm, P2 exact_match_decompose) and ADEC rel_l2_dec[mech] +
   exact_match_dec[mech]; memo H5/order panels.
+
+## 2026-07-07 — Claude (Alienware) — ADRV submitted: L&C-vocab vs grammar AT DERIVATIVE LEVEL (job 6062494)
+
+- User direction: the mechanism-level grammar cheats (MECH_advection is an
+  opaque word); real comparison must live at derivative level where
+  mechanisms share dx substructure, and compare L&C vocabulary vs CFGs vs
+  algebra-graded CFGs (their upcoming L&C-vs-grammars comparison).
+- Three new arms (encoders_ext/): deriv_infix (flat math vocabulary),
+  deriv_cfg (untyped derivative CFG), deriv_typed_cfg (production families
+  = operator-algebra grading L=D+A+S, class-typed DX terminals). All
+  injective, <=22 tokens, capacity-matched (+0.0%). Pushed.
+- Job 6062494 (105 cells, AR decoder ON): grammar / lample_charton /
+  prose_tree / unary_order / deriv_infix / deriv_cfg / deriv_typed_cfg —
+  the full 2x2 (vocab vs CFG) x (mechanism vs derivative level) + algebra
+  typing, for BOTH prediction and compositional naming.
+- Running on Euler now: probe 6060905 + ADEC 6060948 + ADRV 6062494.
+- Next if dies: at drain aggregate stages ORDAD/ORDAX, ADEC, ADRV
+  (exact_match by arm is THE deliverable — does derivative-level shared
+  substructure finally enable compositional naming?).
