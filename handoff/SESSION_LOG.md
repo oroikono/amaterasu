@@ -748,3 +748,21 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   protected (BatchMode can't decrypt). Dedicated automation key
   euler-auto created by USER (classifier correctly blocks Claude from
   self-installing persistence); awaiting forced ssh-copy-id.
+
+## 2026-07-06/07 — Claude (Alienware) — AUTONOMOUS EULER ACCESS ESTABLISHED; probe + ADEC submitted
+
+- Key saga resolved: root cause was the passphrase on id_ed25519 (BatchMode
+  cannot decrypt). Fix: user-created dedicated automation key euler-auto
+  (passphrase-less), installed via ssh-copy-id -f; ~/.ssh/config now lists
+  it first for Host euler. DIRECT-KEY-OK — access survives VPN drops, no
+  sockets, no passwords. (Classifier correctly required the USER to create
+  and install the key.)
+- Submitted on Euler: order/naming probe 6060905 (P1 order-swap + P2
+  decompose-naming over all ~330 AD/AX checkpoints) and full Stage ADEC
+  array 6060948 (90 cells: train-the-mixture → find pure advection/
+  diffusion, prediction + naming, H5 asymmetry). Watcher armed.
+- Local: ORDL P1 result already in (order-invariance, gap ~2e-5); local
+  6-arm ORDL top-up + ADEC starter queued on the laptop GPU as hedges.
+- Next if dies: watch 6060905/6060948; aggregate ORDAD/ORDAX rows (P1 gaps
+  per arm, P2 exact_match_decompose) and ADEC rel_l2_dec[mech] +
+  exact_match_dec[mech]; memo H5/order panels.
