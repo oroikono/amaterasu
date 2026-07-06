@@ -705,3 +705,14 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
 - Next if dies: when 5882055 drains → aggregate --stage AD task=discovery
   metric=exact_match (+ mech_f1); extend memo (AX panel + H3 panel);
   consider AX-decode follow-up (10 new arms with AR decoder).
+
+## 2026-07-06 — Claude (Alienware) — Euler link down (socket gone); AD array unaffected, awaiting access
+
+- ControlMaster socket disappeared (VPN drop likely); key still not
+  authorized on Euler. AD array 5882055 (89 cells) continues server-side.
+- Everything through e3b0bd0 is pushed (AX panel + H3 probe in memo).
+- ON RECONNECT: rm -f ~/.ssh/euler-cm.sock && ssh -fN -M -S
+  ~/.ssh/euler-cm.sock -o ControlPersist=12h euler; then aggregate
+  --stage AD (task=discovery, metric=exact_match; also mech_f1) from
+  /cluster/work/math/ooikonomou/symcomp/results/master.csv and append the
+  H3 panel to the memo as measured.
