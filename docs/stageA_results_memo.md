@@ -208,3 +208,24 @@ is warranted before interpreting.
   128/256/512 and xattn/film fusion.
 - Straggler note: ADRV cell 88 (deriv_cfg, s4i1) timed out twice on
   different nodes — excluded (104/105); investigate before final freeze.
+
+## Additions (2026-07-07, second batch): replication + full Stage B
+
+- **The naming ordering REPLICATES on fresh init seeds (ADRV2, 105 cells):**
+  typed CFG 0.0139 > untyped CFG 0.0113 > unrolled vocabularies 0.0065-0.0080
+  > mechanism-level 0.0000-0.0014. Two independent seed batteries now agree;
+  the first representation effect is replicated, not a fluke.
+- **AXD (decoder over all 16 AX arms):** best namers are the semantically-
+  grounded arms — fourier_symbol 0.0149, physics_typed_tags 0.0107 — above
+  every mechanism-word arm. Naming succeeds to the degree the target
+  sequence is computable from dynamics-grounded shared structure.
+- **Stage B complete (film + 128 + 512): the two core nulls are fully
+  robust, plus one new finding.** (a) grammar == scrambled in all four
+  architectures; (b) coeff_vector >= all arms in all four; (c) NEW: under
+  FiLM fusion the token-symbol arms COLLAPSE (rel_l2 0.43 vs data-only
+  0.23) while vector conditioning is unaffected — the coeff_vector
+  advantage grows monotonically as fusion/scale weakens (0.030 at d512,
+  0.037 at d256/xattn, 0.058 at d128, 0.22 at FiLM). Token-sequence
+  reading is the fragile component; numeric conditioning is robust.
+  (Known: 7 nan rows in B512 grammar, excluded; ADRV cell 88 timed out
+  twice, 104/105.)

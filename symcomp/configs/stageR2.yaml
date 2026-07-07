@@ -1,0 +1,99 @@
+experiment:
+  name: symcomp_stageR2
+  stage: R2
+  rung: S1S2
+mechanisms:
+  linear:
+  - advection
+  - diffusion
+  - dispersion
+  - reaction
+  - hyperdiffusion
+  nonlinear:
+  - burgers
+  - cubic
+coeffs:
+  advection: 1.0
+  diffusion: 0.5
+  dispersion: 0.3
+  reaction: 0.7
+  hyperdiffusion: 0.2
+data:
+  N: 256
+  T: 32
+  t_max: 0.5
+  n_ic_train: 256
+  n_ic_test: 64
+  noise_levels:
+  - 0.0
+  - 0.001
+  - 0.01
+  epsilons:
+  - 0.0
+  - 0.15
+  - 0.3
+  - 0.5
+  - 0.8
+  ic_modes: 6
+split:
+  seeds:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  held_frac: 0.35
+  max_terms: 3
+  triples_sample: 8
+model:
+  reps:
+  - grammar
+  - deriv_cfg
+  - deriv_typed_cfg
+  - deriv_bpe_cfg
+  - operad_comp_cfg
+  - deriv_cfg_qnum
+  - deriv_sketch_cfg
+  - deriv_cd_cfg
+  - typed_sketch_cd_cfg
+  - bpe_cfg
+  d_model: 256
+  depth: 2
+  max_len: 48
+  n_in_steps: 4
+  fusion: xattn
+  backbone: transformer
+  scales:
+  - 128
+  - 256
+  - 512
+train:
+  init_seeds:
+  - 0
+  - 1
+  - 2
+  epochs: 80
+  batch: 64
+  lr: 0.0003
+  warmup_frac: 0.05
+  weight_decay: 0.01
+  early_stop_patience: 12
+  tasks:
+  - prediction
+  - discovery
+  match_capacity_tol: 0.02
+  ar_decoder: true
+  ar_weight: 0.5
+eval:
+  bootstrap_resamples: 10000
+  metrics_prediction:
+  - rel_l2
+  metrics_discovery:
+  - exact_match
+  - mech_f1
+  - coef_mae
+cluster:
+  work_dir: ${SYMCOMP_WORK_DIR}
+  home_archive: ${SYMCOMP_HOME_ARCHIVE}
+  scratch: ${SCRATCH}/symcomp
+  wandb_mode: offline

@@ -847,3 +847,17 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
 - Memo updated. ADRV cell 88 double-timeout flagged. Queue empty.
 - Next: round-2 parsimony arms (panel proposals in log above if lens agents
   landed them), prior-art re-check, figures refresh, results memo v2 for Sid.
+
+## 2026-07-07 (later) — Claude (Alienware) — ADRV2 REPLICATES the naming ordering; AXD + full Stage B in; R2 crew launching
+
+- ADRV2 (fresh seeds): typed 0.0139 > cfg 0.0113 > unrolled vocab ~0.007 >
+  mechanism-level ~0 — ordering replicated. AXD: fourier_symbol 0.0149 /
+  physics_typed_tags 0.0107 top the naming table (semantic grounding).
+- Stage B done: form-null (grammar==scrambled) and numeric dominance robust
+  across xattn/film/128/256/512; FiLM collapses token arms (0.43 vs
+  data-only 0.23) — token reading fragile, vectors robust.
+- Round-2 parsimony panel delivered 7 verified-spec arms (r2_arms.json;
+  proposals also in log above); stageR2.yaml = 7 + 3 baselines, decoder on,
+  max_len 48; implementation crew next.
+- Next if dies: implement encoders_ext arms per r2_arms.json specs, verify,
+  dry-run task 45 (deriv_bpe_cfg s0i0), submit R2 array 0-149 on Euler.
