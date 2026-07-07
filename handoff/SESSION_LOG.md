@@ -809,3 +809,22 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   three directions (compose, decompose-from-composites, mixture→pure).
 - Remaining: ADRV 6062494 (105 cells) — derivative-level grammars, the
   last candidate for compositional naming.
+
+## 2026-07-07 — Claude (Alienware) — laptop closing: 5 job groups on Euler, all laptop-independent
+
+- SHIPPED before close: **ADRV2 (6077958)** — 105 cells, fresh init seeds
+  [3,4,5], replication battery for the naming ordering (typed CFG > CFG >
+  vocab > mechanism-level), our thinnest+newest result. **AXD (6077959)** —
+  240 cells, AR decoder over ALL 16 AX arms (naming untested for slot/bag/
+  fourier/etc). Zero new code — pure configs; no unverified implementations
+  shipped under time pressure.
+- Also running: Bfilm 6077442 + B128 6077443 (fallback tol 3.5%), ADRV
+  straggler 6073102.
+- Round-2 grammar design panel (parsimony/compositional-reuse arms) was
+  mid-flight locally and dies with the laptop — lens agents were instructed
+  to append their proposals to this log (see entries above/below if
+  present); re-run the panel or lift specs from those entries next session.
+- WAKE-UP: check `squeue --me`; when empty, pull master.csv and aggregate
+  stages B{film,128}, ADRV(+straggler, rerun dedups), ADRV2 (KEY: does the
+  naming ordering replicate on fresh seeds?), AXD (naming across all arms).
+  Then: round-2 arm implementation, prior-art re-check, figures refresh.
