@@ -178,3 +178,33 @@ is warranted before interpreting.
   d_model=128 arrays failed on the 2% capacity gate (integer-width
   granularity; 'none' arm +2.6%) — resubmitted at the pre-registered
   fallback tolerance 3.5% with exact per-arm counts reported.
+
+## Additions (2026-07-08): replication, naming-across-all-arms, fusion/scale
+
+- **The naming ordering REPLICATES on fresh init seeds** (ADRV2, 105 cells):
+  derivative-CFGs 0.011-0.014 > unrolled vocabularies 0.006-0.008 >
+  mechanism-level 0.000-0.001 exact-match. Combined 30 cells/arm:
+  deriv_typed_cfg 0.016, deriv_cfg 0.012, unary/infix ~0.006, grammar
+  0.0014, lample 0.0000. The CFG-vs-vocabulary gap (~2x) is robust; the
+  typed-vs-untyped edge narrowed (0.014 vs 0.011 on fresh seeds) — typing
+  helps at most weakly.
+- **AXD (decoder over all 16 AX arms) reframes the naming result:** best
+  namers are fourier_symbol (0.0149) and physics_typed_tags (0.0107) —
+  arms whose tokens encode PHYSICALLY INFERABLE quantities (spectral bins,
+  order/parity/class), not conventions. With the ADRV result (dx-counts
+  also inferable), the cleaner statement is: **decoders generalize to the
+  degree token semantics are grounded in the observable dynamics, and fail
+  where tokens are conventional** (mechanism names, L&C symbols, scrambled:
+  0.000-0.003). fourier "naming" is partially measurement rather than
+  symbolic composition — an interpretive caveat that cuts both ways.
+- **Stage B, fusion axis (film, 60 cells): large architectural interaction.**
+  FiLM fusion cripples token-sequence conditioning (grammar ~0.20 rel_l2
+  WORSE than coeff_vector/none) while the token arms still tie each other
+  (grammar-scrambled +0.002). The form-null among token arms survives;
+  numeric-vector conditioning is additionally ROBUST TO FUSION CHOICE in a
+  way token sequences are not.
+- **Stage B, small scale (d_model 128): null holds** (coeff_vector -0.058;
+  scrambled tie). With B512 earlier: the H1 null now spans d_model
+  128/256/512 and xattn/film fusion.
+- Straggler note: ADRV cell 88 (deriv_cfg, s4i1) timed out twice on
+  different nodes — excluded (104/105); investigate before final freeze.

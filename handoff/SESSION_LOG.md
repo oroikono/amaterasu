@@ -828,3 +828,22 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   stages B{film,128}, ADRV(+straggler, rerun dedups), ADRV2 (KEY: does the
   naming ordering replicate on fresh seeds?), AXD (naming across all arms).
   Then: round-2 arm implementation, prior-art re-check, figures refresh.
+
+## 2026-07-07 08:56 UTC — Claude (round-2 encoder design subagent, operator-algebra lens) — 4 ADRV round-2 arm proposals returned via schema: operad_comp_cfg (explicit binary COMP over dx towers, balanced free-magma bracketing, vs deriv_cfg), semigroup_factor_cfg (derived generator D2=dx.dx, greedy {D2,DX} normal form, vs deriv_cfg), graded_dx_cfg (full Z-grading: R_GRADE_n head + DX_1..DX_4 ladder, vs deriv_typed_cfg), dyadic_coef_cfg (compositional place-value coefficient numerals C_2/C_1/C_H/C_Q, vs deriv_cfg); all <=28 tokens 3-term, vocabs 10-21, no key collisions.
+
+- 2026-07-07 10:58 CEST — Claude (design subagent): round-2 "parsimonious compositional tokens" proposals — deriv_bpe_cfg (corpus-induced R_DX2 chunks, pair vs deriv_cfg), deriv_sq_cfg (SQ/COMP back-reference towers, pair vs deriv_cfg), deriv_typed_sq_cfg (typed variant, pair vs deriv_typed_cfg/deriv_sq_cfg), deriv_cfg_qnum (unary quarter-numerals for COEF, pair vs deriv_cfg); all <=22 tok realized (qnum 24; contract-worst 43<=48), vocabs 7-15, targets naming > 0.012/0.018.
+
+- 2026-07-07 — Claude (seq-modeling-lens subagent): round-2 encoder proposals returned via schema — deriv_sketch_cfg (plan-first leftmost derivation, same token multiset as deriv_cfg), deriv_cd_cfg (countdown DX_k towers, kills unary counting), typed_sketch_cd_cfg (typing+sketch+countdown stack vs deriv_typed_cfg), bpe_cfg (frozen BPE-8 corpus-induced control, predicted NEGATIVE); minimal pairs anchored at deriv_cfg/deriv_typed_cfg, all <=22 tokens 3-term.
+
+## 2026-07-08 — Claude (Alienware) — ALL FIVE OVERNIGHT GROUPS COMPLETE; ordering replicated; AXD surprise
+
+- ADRV2: naming ordering REPLICATES on fresh seeds (CFG>vocab>mechanism,
+  ~2x CFG-vs-vocab robust; typed edge weak). AXD: best namers are
+  fourier_symbol/physics_typed_tags → reframed: naming generalizes where
+  token semantics are physically inferable, fails where conventional.
+  Bfilm: FiLM cripples token conditioning (-0.20 vs vectors; token arms
+  still tie) — fusion robustness is itself a coeff_vector advantage.
+  B128: null holds. H1 null now spans 3 scales x 2 fusions.
+- Memo updated. ADRV cell 88 double-timeout flagged. Queue empty.
+- Next: round-2 parsimony arms (panel proposals in log above if lens agents
+  landed them), prior-art re-check, figures refresh, results memo v2 for Sid.
