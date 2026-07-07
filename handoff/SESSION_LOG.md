@@ -797,3 +797,15 @@ consistent with the spec's own 20-token / 41-vocab arithmetic.
   composes (H3) nor decomposes at mechanism-level vocab.
 - Still running: ADEC 6060948 (~89), ADRV 6062494 (~89) — the derivative-
   level retest of exactly these questions.
+
+## 2026-07-07 — Claude (Alienware) — ADEC COMPLETE (90/90): mixture→pure works numerically; H5 asymmetry CONFIRMED; naming 0/3
+
+- Train-on-composites → recover pure laws: PREDICTION works (pure diffusion
+  rel_l2 0.08-0.17, better than compose ever was; pure advection 0.22-0.31).
+- **H5 confirmed in all 6 arms**: singular limit (advection) recovered 2-3x
+  worse than regular limit (diffusion) — pre-registered asymmetry, now with
+  evidence, pulled forward from Stage C. coeff_vector/none best again.
+- NAMING: exact_match 0.000 every arm, both laws — naming now fails in all
+  three directions (compose, decompose-from-composites, mixture→pure).
+- Remaining: ADRV 6062494 (105 cells) — derivative-level grammars, the
+  last candidate for compositional naming.
