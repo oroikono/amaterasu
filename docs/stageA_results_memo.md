@@ -153,3 +153,28 @@ is warranted before interpreting.
 3. E2/E3 interventions at Stage A scale; more split seeds if p<0.05 wanted.
 4. Re-run the prior-art check before any write-up (scoop risk is on the
    commutator law, which is now the headline).
+
+## Additions (2026-07-07): direction probes, H5, derivative-level grammars, scale
+
+- **Order-swap probe (330 checkpoints):** feeding term-order-reversed symbols
+  (dif+adv for the trained adv+dif) changes rel_l2 by |gap| <= 2e-4 in every
+  arm; order-free arms give exactly 0.0000 (built-in sanity anchors). The
+  fusion is architecturally order-blind — A+B == B+A everywhere.
+- **ADEC (train mixtures -> recover pure laws, 90 cells): H5 CONFIRMED.**
+  Prediction recovers never-seen-alone diffusion at rel_l2 0.08-0.17 and
+  advection at 0.22-0.31 — the pre-registered regular/singular asymmetry, in
+  all 6 arms. Naming the pure laws: 0.000 everywhere.
+- **ADRV (derivative-level representations, 105 cells): the study's FIRST
+  representation effect.** Naming unseen compositions moves off zero only
+  when mechanisms share dx substructure, ordered by compositional structure:
+  algebra-typed CFG 0.018 > untyped CFG 0.012 > flat infix vocabulary 0.005
+  > mechanism-level arms 0.000-0.003. Absolute levels remain small (~2%
+  exact match; hits in ~4-5% of variant-cells) — "naming BEGINS to compose
+  under derivative-level grammars"; needs more seeds before a strong claim.
+  Prediction also improves CI-clean vs mechanism-grammar (-0.007..-0.013).
+- **Stage B, scale axis (d_model 512, 60 cells): the H1 null replicates**
+  (coeff_vector -0.028 vs grammar; scrambled tie). 7/375 grammar rows nan
+  (partial divergence at 512) — excluded, flagged. fusion=film and
+  d_model=128 arrays failed on the 2% capacity gate (integer-width
+  granularity; 'none' arm +2.6%) — resubmitted at the pre-registered
+  fallback tolerance 3.5% with exact per-arm counts reported.

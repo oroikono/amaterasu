@@ -75,7 +75,7 @@ train:
   tasks:
   - prediction
   - discovery
-  match_capacity_tol: 0.02
+  match_capacity_tol: 0.035
 eval:
   bootstrap_resamples: 10000
   metrics_prediction:
