@@ -229,3 +229,22 @@ is warranted before interpreting.
   reading is the fragile component; numeric conditioning is robust.
   (Known: 7 nan rows in B512 grammar, excluded; ADRV cell 88 timed out
   twice, 104/105.)
+
+## Stage BEST (2026-07-08): the constructive result
+
+Decoupling the conditioning representation from the naming vocabulary
+('coeff_vector@deriv_typed_cfg': continuous coefficients IN, algebra-typed
+derivative CFG OUT) achieves BOTH optima simultaneously in one
+capacity-matched model (60-cell battery):
+
+| arm | prediction | naming unseen |
+|---|---|---|
+| coeff_vector@deriv_typed_cfg | 0.211 | 0.0139 |
+| coeff_vector (no decoder) | 0.203 | — |
+| deriv_typed_cfg (tokens both ways) | 0.257 | 0.0168 |
+
+Prediction at float-conditioning level (+0.008 objective-sharing cost, vs
++0.046 saved over token conditioning); naming inside the typed-decoder's
+replicated 0.014-0.018 band. Every ingredient of the recipe traces to a
+controlled result. This is the study's constructive deliverable: numbers
+for the physics, grammar for the description, one model.

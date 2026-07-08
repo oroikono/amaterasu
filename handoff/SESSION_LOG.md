@@ -879,3 +879,16 @@ Verified/finalized symcomp/symcomp/encoders_ext/deriv_cfg_qnum.py: one-axis mini
 
 ## 2026-07-07T21:48Z — deriv_cd_cfg arm (subagent)
 Added symcomp/symcomp/encoders_ext/deriv_cd_cfg.py: tower positional-readability arm — deriv_cfg skeleton with each unary R_DX run replaced by an indexed COUNTDOWN DX_order..DX_1 (never count-up; order-0 reaction has no DX tokens); spine/R_PROD/COEF/R_U identical to deriv_cfg. Self-test: injective on 25-op universe across all split seeds, maxlen 22 (matches spec), universe vocab 13 (4 of 8 coeff bins realized; spec's 17 counts all bins), both normative examples byte-exact (3-term = 19 tokens), nonlinear raises ValueError, PYTHONHASHSEED 0 vs 7 subprocess outputs identical. No other files touched.
+
+## 2026-07-08 — Claude (Alienware) — Stage BEST complete: decoupled numbers-in/grammar-out achieves both optima
+
+- R2 parsimony factorial done earlier (typed CFG stays naming leader
+  0.0159; bpe control behaved as pre-registered; plan-first + numerals
+  actively hurt). Stage BEST (6194526, 60 cells): the decoupled arm
+  coeff_vector@deriv_typed_cfg predicts at 0.211 (~coeff_vector 0.203,
+  beats token conditioning 0.257) AND names at 0.0139 (typed band) —
+  the best multimodal symbolic-numbers configuration, per design.
+- Infra: 'input@decode' pseudo-arms (model.ar_vocab_size; run_task
+  split_rep + decoder-priced capacity search). All pushed.
+- Remaining agenda: prior-art re-check before write-up; Sid package
+  (figures current through pipeline_diagram); ADRV cell-88 curiosity.
