@@ -197,7 +197,19 @@ def load_benchmark(cfg, man, anchor, data_dir):
 # ---------------------------------------------------------------------------
 # joint two-head training
 # ---------------------------------------------------------------------------
-def build_joint_tensors(bench, idxs, encoder, vocab, max_len, n_in):
+def split_rep(rep, use_ar):
+    """'input@decode' pseudo-arms decouple the conditioning representation
+    from the naming vocabulary (e.g. 'coeff_vector@deriv_typed_cfg': best
+    prediction channel in, best naming grammar out). Returns
+    (input_rep, decode_rep-or-None)."""
+    if "@" in rep:
+        in_rep, dec_rep = rep.split("@", 1)
+        return in_rep, (dec_rep if use_ar else None)
+    return rep, (rep if use_ar and rep not in ("coeff_vector", "none") else None)
+
+
+def build_joint_tensors(bench, idxs, encoder, vocab, max_len, n_in,
+                        decode_rep=None):
     """Precompute the whole training set as stacked tensors.
 
     Per-item Dataset.__getitem__ tensor construction costs ~seconds/step under
@@ -205,27 +217,37 @@ def build_joint_tensors(bench, idxs, encoder, vocab, max_len, n_in):
     train set is only ~150 MB, so materializing it once removes the entire
     input pipeline from the step time.
     """
+    from symcomp.encoders import encode_ids
     inner = OpDataset(bench, idxs, encoder, vocab, max_len, n_in=n_in)
-    ics, syms, masks, ys = [], [], [], []
+    ics, syms, masks, ys, dsyms, dmasks = [], [], [], [], [], []
     mechs = torch.zeros(len(idxs), len(ALL_MECHANISMS_DISCOVERY))
     coefs = torch.zeros(len(idxs), len(ALL_MECHANISMS_DISCOVERY))
     for i in range(len(idxs)):
         ic, sym, mask, y, _, _ = inner[i]
         ics.append(ic); syms.append(sym); masks.append(mask); ys.append(y)
-        for n, c in bench.samples[idxs[i]].op.coeffs.items():
+        op = bench.samples[idxs[i]].op
+        if decode_rep is not None:
+            di, dm = encode_ids(op, decode_rep, vocab[decode_rep], max_len)
+            dsyms.append(torch.tensor(di)); dmasks.append(torch.tensor(dm))
+        else:  # unused placeholders (keeps the batch tuple fixed-width)
+            dsyms.append(torch.zeros(max_len, dtype=torch.long))
+            dmasks.append(torch.zeros(max_len))
+        for n, c in op.coeffs.items():
             j = ALL_MECHANISMS_DISCOVERY.index(n)
             mechs[i, j], coefs[i, j] = 1.0, float(c)
     return torch.utils.data.TensorDataset(
         torch.stack(ics), torch.stack(syms), torch.stack(masks),
-        torch.stack(ys), mechs, coefs)
+        torch.stack(ys), mechs, coefs, torch.stack(dsyms), torch.stack(dmasks))
 
 
-def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
+def train_joint(model, bench, encoder, vocab, cfg, init_seed, device,
+                decode_rep=None):
     tr = cfg["train"]
     torch.manual_seed(init_seed)
     ds = build_joint_tensors(bench, bench.train_idx, encoder, vocab,
                              int(cfg["model"]["max_len"]),
-                             int(cfg["model"].get("n_in_steps", 4)))
+                             int(cfg["model"].get("n_in_steps", 4)),
+                             decode_rep=decode_rep)
     dl = torch.utils.data.DataLoader(ds, batch_size=int(tr["batch"]),
                                      shuffle=True, drop_last=False,
                                      pin_memory=(device == "cuda"))
@@ -245,7 +267,7 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
     for ep in range(epochs):
         model.train()
         tot = 0.0
-        for ic, sym, mask, y, mech, coef in dl:
+        for ic, sym, mask, y, mech, coef, dsym, dmask in dl:
             ic, sym, mask, y = (t.to(device) for t in (ic, sym, mask, y))
             mech, coef = mech.to(device), coef.to(device)
             opt.zero_grad()
@@ -254,14 +276,17 @@ def train_joint(model, bench, encoder, vocab, cfg, init_seed, device):
             loss = (mse(pred, y)
                     + w_disc * (bce(mlog, mech) + mse(cpred, coef)))
             if model.ar_decoder is not None:
-                # H3: teacher-forced CE over the rep's own token sequence.
-                # labels = [tok_0..tok_{L-1}, EOS at true length, ignore pads]
-                logits = model.discover_ar(ic, tgt_ids=sym)
-                lens = mask.sum(1).long()
-                labels = torch.full((sym.shape[0], sym.shape[1] + 1), -100,
+                # H3: teacher-forced CE over the DECODE representation's
+                # token sequence (== the input rep unless decoupled via '@').
+                tgt, tmask = ((dsym, dmask) if decode_rep is not None
+                              else (sym, mask))
+                tgt, tmask = tgt.to(device), tmask.to(device)
+                logits = model.discover_ar(ic, tgt_ids=tgt)
+                lens = tmask.sum(1).long()
+                labels = torch.full((tgt.shape[0], tgt.shape[1] + 1), -100,
                                     dtype=torch.long, device=device)
-                labels[:, : sym.shape[1]] = torch.where(
-                    mask > 0.5, sym, torch.full_like(sym, -100))
+                labels[:, : tgt.shape[1]] = torch.where(
+                    tmask > 0.5, tgt, torch.full_like(tgt, -100))
                 labels[torch.arange(len(lens)), lens] = model.ar_decoder.eos
                 loss = loss + w_ar * torch.nn.functional.cross_entropy(
                     logits.reshape(-1, logits.shape[-1]), labels.reshape(-1),
@@ -405,23 +430,45 @@ def main():
     n_in = int(mcfg.get("n_in_steps", 4))
     use_ar = bool(cfg["train"].get("ar_decoder", False))
     tol = float(cfg["train"]["match_capacity_tol"])
-    vsizes = {r: max(len(vocab.get(r, {})), 4) for r in REPS}
+    in_rep, dec_rep = split_rep(rep, use_ar)
+    vsizes = {r: max(len(vocab.get(split_rep(r, True)[0], {})), 4)
+              for r in REPS}
 
     # capacity match (defense A1): resolve overrides, assert ALL arms at the
     # PRE-REGISTERED tolerance (a looser gate here would overstate the claim)
+    base_reps = [r for r in REPS if "@" not in r]
     overrides, target, residuals = resolve_hidden_overrides(
-        REPS, bench.N, len(bench.t_eval), vsizes, d_model,
+        base_reps, bench.N, len(bench.t_eval), vsizes, d_model,
         len(MECHANISMS), max_len, tol=tol, n_in_steps=n_in,
         use_ar_decoder=use_ar)
 
-    def build(r, seed=0):
+    def build_any(r, seed=0, override="FROM_TABLE"):
         torch.manual_seed(seed)
+        ir, dr = split_rep(r, use_ar)
+        av = (max(len(vocab.get(dr, {})), 4) if (dr and "@" in r) else None)
         return OperatorLearner(
             bench.N, len(bench.t_eval), vsizes[r], d_model=d_model,
-            symbol_kind=r, fusion=mcfg["fusion"], n_mech=len(MECHANISMS),
+            symbol_kind=ir, fusion=mcfg["fusion"], n_mech=len(MECHANISMS),
             max_len=max_len, n_discovery_mech=len(ALL_MECHANISMS_DISCOVERY),
-            data_hidden_override=overrides[r], n_in_steps=n_in,
-            use_ar_decoder=use_ar)
+            data_hidden_override=(overrides[r] if override == "FROM_TABLE"
+                                  else override),
+            n_in_steps=n_in, use_ar_decoder=use_ar, ar_vocab_size=av)
+
+    # decoupled '@' arms carry a decoder the generic resolver didn't price in;
+    # binary-search their data-branch width against the same target
+    from symcomp.model import count_params
+    for r in [x for x in REPS if "@" in x]:
+        lo, hi = 16.0, 1024.0
+        for _ in range(40):
+            mid = (lo + hi) / 2
+            if count_params(build_any(r, override=mid)) < target:
+                lo = mid
+            else:
+                hi = mid
+        overrides[r] = int(round(lo))
+
+    def build(r, seed=0):
+        return build_any(r, seed=seed)
 
     counts, report = assert_matched_capacity({r: build(r) for r in REPS},
                                              tol=tol)
@@ -442,8 +489,9 @@ def main():
     print(f"registered run {run.run_id} -> {run.dir}", flush=True)
 
     model = build(rep, seed=init_seed).to(device)
-    epochs_run, final_loss = train_joint(model, bench, rep, vocab, cfg,
-                                         init_seed, device)
+    epochs_run, final_loss = train_joint(model, bench, in_rep, vocab, cfg,
+                                         init_seed, device,
+                                         decode_rep=dec_rep)
 
     # evaluation -> rows
     base = {"stage": a.stage, "encoder": rep, "fusion": mcfg["fusion"],
@@ -451,7 +499,7 @@ def main():
             "init_seed": init_seed, "params": counts[rep]}
     rows = []
     for v in variants:
-        ev = evaluate(model, bench, v["idxs"], rep, vocab, max_len,
+        ev = evaluate(model, bench, v["idxs"], in_rep, vocab, max_len,
                       device=device, n_in=n_in)
         rel = float(np.mean([r["rel_l2"] for r in ev]))
         metric = "rel_l2" if v["direction"] == "compose" else "rel_l2_decompose"
@@ -462,7 +510,7 @@ def main():
                      "metric_name": metric, "metric_value": rel})
         if (v["direction"] == "decompose" and model.ar_decoder is not None
                 and cfg["split"].get("decompose_anchor")):
-            em = ar_exact_match(model, bench, v["idxs"], rep, vocab,
+            em = ar_exact_match(model, bench, v["idxs"], dec_rep, vocab,
                                 max_len, n_in, device)
             rows.append({**base, "task": "discovery", "commutator": 0.0,
                          "metric_name": f"exact_match_dec[{v['op'].names()[0]}]",
@@ -471,7 +519,7 @@ def main():
             # E2 (channel masking): same eval with the symbol channel ablated.
             # leverage = rel_l2_masked - rel_l2 quantifies how much the model
             # actually RELIES on symbols (makes the H1 null non-vacuous).
-            evm = evaluate(model, bench, v["idxs"], rep, vocab, max_len,
+            evm = evaluate(model, bench, v["idxs"], in_rep, vocab, max_len,
                            device=device, n_in=n_in, ablate_symbol=True)
             rows.append({**base, "task": "prediction",
                          "commutator": v["commutator"],
@@ -485,7 +533,7 @@ def main():
                          "commutator": v["commutator"],
                          "metric_name": "coef_mae", "metric_value": mae})
             if model.ar_decoder is not None:
-                em = ar_exact_match(model, bench, v["idxs"], rep, vocab,
+                em = ar_exact_match(model, bench, v["idxs"], dec_rep, vocab,
                                     max_len, n_in, device)
                 rows.append({**base, "task": "discovery",
                              "commutator": v["commutator"],
@@ -498,8 +546,8 @@ def main():
     # say advection+diffusion, the symbol claims PURE advection. Fraction of
     # the prediction's movement toward the pure solution = symbol causality
     # (1 = symbol fully steers the output, 0 = model follows the data only).
-    if rep != "none":
-        e3 = e3_symbol_swap(model, bench, variants, anchor, rep, vocab,
+    if in_rep != "none":
+        e3 = e3_symbol_swap(model, bench, variants, anchor, in_rep, vocab,
                             max_len, n_in, cfg, device)
         if e3 is not None:
             rows.append({**base, "task": "intervention", "commutator": 0.0,

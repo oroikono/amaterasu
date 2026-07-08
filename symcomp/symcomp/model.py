@@ -170,7 +170,8 @@ class OperatorLearner(nn.Module):
     def __init__(self, n_grid, T_out, vocab_size, d_model=128,
                  symbol_kind="grammar", fusion="xattn", n_mech=5,
                  depth=2, max_len=32, n_discovery_mech=8, width_mult=None,
-                 data_hidden_override=None, n_in_steps=1, use_ar_decoder=False):
+                 data_hidden_override=None, n_in_steps=1, use_ar_decoder=False,
+                 ar_vocab_size=None):
         super().__init__()
         # n_in_steps: how many observed trajectory frames feed the data branch.
         # MUST be > 1 for the discovery head to be identifiable: a single IC
@@ -192,11 +193,14 @@ class OperatorLearner(nn.Module):
             nn.Linear(d_model, T_out))
         self.discovery_mech = nn.Linear(d_model, n_discovery_mech)
         self.discovery_coef = nn.Linear(d_model, n_discovery_mech)
-        # H3: AR decoder over the rep's OWN vocab (token arms only; the
-        # non-token arms keep the multilabel baseline as pre-registered)
-        self.ar_decoder = (ARDecoder(vocab_size, d_model, max_len)
-                           if use_ar_decoder
-                           and symbol_kind not in ("coeff_vector", "none")
+        # H3: AR decoder. Default: over the rep's OWN vocab (token arms only).
+        # ar_vocab_size decouples the DECODE vocabulary from the INPUT rep
+        # (e.g. condition on coeff_vector, name in the typed derivative CFG),
+        # in which case any symbol_kind may carry a decoder.
+        if ar_vocab_size is None and symbol_kind not in ("coeff_vector", "none"):
+            ar_vocab_size = vocab_size
+        self.ar_decoder = (ARDecoder(ar_vocab_size, d_model, max_len)
+                           if use_ar_decoder and ar_vocab_size is not None
                            else None)
         self.symbol_kind = symbol_kind
 
