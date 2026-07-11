@@ -71,6 +71,28 @@ def build_split(cfg, split_seed):
     sp = cfg["split"]
     mechs = list(cfg["mechanisms"]["linear"])
     coeffs = {m: float(cfg["coeffs"][m]) for m in mechs}
+    if sp.get("compose_transfer"):
+        # Stage SYM ("symbols must make the difference"): train = all pure
+        # laws + composites over DONOR mechanisms only (disjoint from the
+        # anchor pair); test = the anchor composite. Combined with
+        # n_in_steps=1 (IC-only input, operator-independent), the symbol
+        # channel is the SOLE carrier of operator identity at test time —
+        # composition must happen by algebra over symbols, not data.
+        from symcomp.splits import enumerate_operators, SplitManifest
+        import numpy as np
+        rng = np.random.default_rng(split_seed)
+        universe = enumerate_operators(mechs, coeffs, sp["max_terms"],
+                                       sp["triples_sample"], rng)
+        donors = {"dispersion", "reaction", "hyperdiffusion"}
+        train = [o for o in universe
+                 if len(o.coeffs) == 1 or set(o.names()) <= donors]
+        anchor = Operator({"advection": coeffs["advection"],
+                           "diffusion": coeffs["diffusion"]})
+        man = SplitManifest(seed=split_seed, train=train,
+                            test_compose=[anchor], test_decompose=[],
+                            meta={"mode": "compose_transfer",
+                                  "donors": sorted(donors)})
+        return man, anchor
     if sp.get("decompose_anchor"):
         # ADEC mode ("train the mixture, find the pure laws"): the anchor
         # primitives' singletons are held out; every composite (incl. the
@@ -129,7 +151,8 @@ def load_benchmark(cfg, man, anchor, data_dir):
 
     # completeness: refuse to run against a partial/stale data dir, otherwise
     # cells silently evaluate different variant sets and stop being comparable
-    dec_anchor = bool(cfg["split"].get("decompose_anchor"))
+    dec_anchor = (bool(cfg["split"].get("decompose_anchor"))
+                  or bool(cfg["split"].get("compose_transfer")))
     need = {o.canonical_str() for o in
             man.train + man.test_compose + man.test_decompose}
     if not dec_anchor:
