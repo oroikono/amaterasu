@@ -892,3 +892,17 @@ Added symcomp/symcomp/encoders_ext/deriv_cd_cfg.py: tower positional-readability
   split_rep + decoder-priced capacity search). All pushed.
 - Remaining agenda: prior-art re-check before write-up; Sid package
   (figures current through pipeline_diagram); ADRV cell-88 curiosity.
+
+## 2026-07-08 — Claude (Alienware) — Sid package built; prior-art deep-research running
+
+- docs/sid_executive_summary.md (2-page distillation: verdicts table,
+  causal-grade evidence list, the recipe, decisions needed, disclosures)
+  + docs/sid_deck.md (12 slides, all figures embedded, presenter notes,
+  asks). Both render on GitHub.
+- Prior-art deep-research (workflow wf_bc3ce896-94d) fanning out over
+  2024-26 literature; per-claim verdicts (clear/partial/scooped) for the
+  commutator law, the dissociation, the capacity-matched null, and typed
+  derivative grammars. Novelty section appended to memo+summary when it
+  lands.
+- Next if dies: read research report (task wxla7bleg output), append
+  novelty statement, push; then write-up pending Sid.
