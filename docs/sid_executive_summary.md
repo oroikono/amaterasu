@@ -1,5 +1,20 @@
 # SymComp — Executive Summary for Sid (2026-07-08)
 
+**North star (your framing).** Toward a multimodal symbolic-numeric
+foundation model that zero-shots to new physics by exploiting
+compositionality, the program's question was: *which symbolic tokens buy
+that?* Answer, with controls: (1) for zero-shot BEHAVIOR — none: a
+continuous parameter channel beats every token scheme everywhere tested;
+(2) for zero-shot DESCRIPTION — algebra-typed derivative-level grammars
+(vocabulary built from the physics' generators, not phenomenon names) —
+the only replicated positive; (3) zero-shot reliability on new physics is
+predictable from the operator algebra (the commutator law) — a trust
+certificate no token can override. The Stage BEST decoupled model
+(parameters in, typed grammar out) is the seed architecture; Stage SYM
+(running) tests whether learned composition transfers through symbols
+alone to mechanisms never seen mixed. Scaling order that keeps this
+evidence-first: coefficient ranges → mechanisms/nonlinear/2D → model scale.
+
 **Bottom line.** The pre-registered program is complete, twice-replicated at
 its core, and lands three results: (1) a **universal commutator law** —
 zero-shot compositional error rises with ‖[A,B]‖ in every representation and
