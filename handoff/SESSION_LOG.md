@@ -906,3 +906,20 @@ Added symcomp/symcomp/encoders_ext/deriv_cd_cfg.py: tower positional-readability
   lands.
 - Next if dies: read research report (task wxla7bleg output), append
   novelty statement, push; then write-up pending Sid.
+
+## 2026-07-12 — Claude (Alienware) — SYM verdict + prior-art (partial) in; ALL PUSHED
+
+- **Stage SYM (90/90): symbol-only composition of never-seen-mixed physics.**
+  Continuous channel composes (coeff_vector 0.504 vs can't-know floor
+  0.559; masking +0.24 proves the symbol carries it). EVERY token grammar
+  lands BELOW the floor (0.70-0.85; syntax misgeneralizes to unseen
+  argument pairs); grammar==scrambled to the end. Absolute level weak →
+  symbol-only zero-shot composition = the open foundation-model gap.
+- **Prior-art check (docs/prior_art_check.md, PARTIAL):** Claims 1-2
+  verified CLEAR (HyCOP = commutator-as-constant only; PROSE family never
+  tests unseen-composition decoding; static-SR analogue arXiv 2509.19849
+  to cite). Claims 3-4 candidates (Unisolver ablations!, PITT, SymPlex)
+  UNVERIFIED — verifier agents died on usage limit; MUST re-run
+  (resume wf_bc3ce896-94d) before any submission.
+- Next: re-verify claims 3-4; fold SYM into memo/summary; then write-up
+  pending Sid's scope call.
