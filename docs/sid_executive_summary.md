@@ -76,3 +76,21 @@ capacity-matched multimodal models on Euler, every run reproducible
 *Figures: `docs/figures/` — pipeline_diagram, money_plot, h1_forest,
 e2_leverage, ax_ranking, h2_rho_all_arms, h3_dissociation, latent_tokens,
 latent_operators, capability_matrix.*
+
+## Anticipated question: "Why did PROSE work, then?"
+
+PROSE's results are consistent with — indeed predicted by — ours:
+(1) its "symbols help" effect is real and we reproduce it (masking a
+trained model's symbol channel costs +0.06–0.08 rel-L2) — but the arm
+comparison PROSE never ran shows the naked coefficient vector delivers
+the same benefit: the cause is the numbers inside the equation, not its
+form; (2) PROSE's only OOD test is wider coefficient ranges on the SAME
+equation families (verified) — exactly the regime where the coefficient
+channel shines; unseen forms/compositions were never tested; (3) its
+symbolic-decode success (>99.9% validity, 0.01% error) is on SEEN
+operators — we reproduce that cell (11/12 exact on trained laws); the
+near-zero decode lives in the cell they never evaluated; (4) PROSE has
+no capacity-matched data-only, coefficient-only, or scrambled control.
+"The bi-modal system performs well" and "the symbolic modality causes
+it" are different claims: PROSE established the first, we tested the
+second.

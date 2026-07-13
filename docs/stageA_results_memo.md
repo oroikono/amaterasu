@@ -248,3 +248,21 @@ Prediction at float-conditioning level (+0.008 objective-sharing cost, vs
 replicated 0.014-0.018 band. Every ingredient of the recipe traces to a
 controlled result. This is the study's constructive deliverable: numbers
 for the physics, grammar for the description, one model.
+
+## Anticipated question: "Why did PROSE work, then?"
+
+PROSE's results are consistent with — indeed predicted by — ours:
+(1) its "symbols help" effect is real and we reproduce it (masking a
+trained model's symbol channel costs +0.06–0.08 rel-L2) — but the arm
+comparison PROSE never ran shows the naked coefficient vector delivers
+the same benefit: the cause is the numbers inside the equation, not its
+form; (2) PROSE's only OOD test is wider coefficient ranges on the SAME
+equation families (verified) — exactly the regime where the coefficient
+channel shines; unseen forms/compositions were never tested; (3) its
+symbolic-decode success (>99.9% validity, 0.01% error) is on SEEN
+operators — we reproduce that cell (11/12 exact on trained laws); the
+near-zero decode lives in the cell they never evaluated; (4) PROSE has
+no capacity-matched data-only, coefficient-only, or scrambled control.
+"The bi-modal system performs well" and "the symbolic modality causes
+it" are different claims: PROSE established the first, we tested the
+second.
