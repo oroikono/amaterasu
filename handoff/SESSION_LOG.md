@@ -923,3 +923,20 @@ Added symcomp/symcomp/encoders_ext/deriv_cd_cfg.py: tower positional-readability
   (resume wf_bc3ce896-94d) before any submission.
 - Next: re-verify claims 3-4; fold SYM into memo/summary; then write-up
   pending Sid's scope call.
+
+## 2026-07-14 — Claude (Alienware) — parallel Codex lane reported (residual tokens); lanes to merge
+
+- User reports a parallel Codex lane on a LOCAL checkout: residual-token
+  arms (residual_string / residual_cfg / residual_term_set) + family_tag /
+  mechanism_multihot controls + run_residual_probe.py + stageRES.yaml +
+  a tiny local probe (1 seed, N=64, 6 epochs). Probe signal: data-only
+  best at tiny scale; residual_string/term_set best among token arms
+  (> PROSE/Lample/tags/multihot); no naming test, no capacity matching.
+  Codex's own verdict matches our three-battery conclusion: prediction
+  lane = continuous channels; CFG belongs in the naming lane.
+- Files NOT yet pushed to origin — Codex lane must push/merge before
+  decision-grade Stage RES can run on Euler via run_task (matched
+  capacity, 3 seeds, prediction+naming lanes split).
+- Coordination: registry/run_task machinery + typed-CFG naming metrics are
+  ready to absorb the residual arms as encoders_ext modules; ping when
+  pushed.
